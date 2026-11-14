@@ -1,8 +1,8 @@
 # 🐾 Pet Diary — Дневник питомца
 
-Веб-приложение для владельцев домашних животных: позволяет вести дневник жизни питомца — кормления, прогулки, лекарства, прививки, здоровье и расходы.
+Веб-приложение для владельцев домашних животных: быстрые отметки кормлений, прогулок, лекарств и других событий из жизни питомца.
 
-A simple web app for pet owners to keep a diary of their pet's life: feeding, walks, medications, vaccinations, health records and expenses.
+A simple web app for pet owners to log their pet's daily life: feeding, walks, play, medication, sleep and grooming.
 
 ## Статус / Status
 
@@ -10,32 +10,36 @@ A simple web app for pet owners to keep a diary of their pet's life: feeding, wa
 
 ## Что уже работает / Features
 
-- [x] Журнал кормлений: кнопка «Покормил» добавляет запись с текущим временем
+- [x] Шесть быстрых действий: покормил, погулял, поиграл, дал лекарство, поспал, почистил
+- [x] Журнал событий с временем, новые записи сверху («сегодня в 14:05», «3 ноября в 09:30»)
+- [x] Сохранение записей между сессиями (localStorage)
+- [x] Удаление отдельной записи и очистка журнала с подтверждением
+- [x] Адаптивная вёрстка (CSS Grid) для телефона и десктопа
+- [x] Новое действие добавляется одной кнопкой в `index.html` (атрибут `data-action`), без правки JS
 
 ## Планы / Roadmap
 
-- [ ] Сохранение записей между сессиями (localStorage)
-- [ ] Отметки прогулок и приёма лекарств
 - [ ] Карточка питомца: имя, вид, порода, дата рождения
 - [ ] Учёт прививок и посещений ветеринара с напоминаниями
 - [ ] Учёт расходов на питомца
-- [ ] Адаптивный дизайн (CSS) для телефона
-- [ ] Удаление и редактирование записей
+- [ ] Редактирование записей
+- [ ] Фильтр и статистика по типам событий
 
 ## Стек / Tech stack
 
-- HTML
-- JavaScript (DOM API)
-- CSS — планируется
+- HTML5
+- CSS3 (Flexbox, Grid)
+- JavaScript (DOM API, localStorage)
+- Git / GitHub
 
 ## Как запустить / How to run
 
 1. Склонируйте репозиторий:
    ```
-   git clone https://github.com/<username>/pet-diary.git
+   git clone https://github.com/j2jyd58wbc-ship-it/pet-diary.git
    ```
 2. Откройте файл `index.html` в браузере.
 
 ## Автор / Author
 
-Дарья Сидоренко — начинающий разработчик / Junior Software Developer
+Дарья Сидоренко — Telegram: [@dasha_si1](https://t.me/dasha_si1)

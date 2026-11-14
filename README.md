@@ -4,7 +4,7 @@
 
 A simple web app for pet owners to log their pet's daily life: feeding, walks, play, medication, sleep and grooming.
 
-**Демо / Live demo:** https://j2jyd58wbc-ship-it.github.io/pet-diary/
+**Демо / Live demo:** https://dasha-sidorenko.github.io/pet-diary/
 
 ## Статус / Status
 
@@ -38,7 +38,7 @@ A simple web app for pet owners to log their pet's daily life: feeding, walks, p
 
 1. Склонируйте репозиторий:
    ```
-   git clone https://github.com/j2jyd58wbc-ship-it/pet-diary.git
+   git clone https://github.com/dasha-sidorenko/pet-diary.git
    ```
 2. Откройте файл `index.html` в браузере.
 

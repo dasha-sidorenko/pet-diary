@@ -2,74 +2,285 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Дневник питомца</title>
-    <link rel="stylesheet" href="style.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Pet Diary — пиксельный дневник питомца</title>
+    <meta
+      name="description"
+      content="Дневник питомца в пиксельном стиле: кормления, прогулки, прививки с напоминаниями, вес, расходы и статистика. Работает офлайн, данные хранятся только у вас."
+    />
+    <meta name="theme-color" content="#2b1d2e" />
+    <meta property="og:title" content="Pet Diary — пиксельный дневник питомца" />
+    <meta property="og:description" content="Заботьтесь о питомце как в тамагочи, только по-настоящему." />
+    <meta property="og:type" content="website" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;700&family=Press+Start+2P&display=swap&subset=cyrillic"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+    <script>
+      // Тему ставим до отрисовки, чтобы не было вспышки светлого экрана
+      try {
+        var s = JSON.parse(localStorage.getItem("pet-diary-v2"));
+        var t = s && s.settings && s.settings.theme;
+        if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
   </head>
   <body>
-    <main>
-      <h1>🐾 Дневник питомца</h1>
-      <p>Здесь я буду отмечать кормления, прогулки и лекарства.</p>
+    <a class="skip-link" href="#main">К содержимому</a>
 
-      <section id="pet-card" class="pet-card">
-        <div id="pet-view" hidden>
-          <div class="pet-card-header">
-            <h2 id="pet-name"></h2>
-            <button id="pet-edit-button" class="secondary">Изменить</button>
-          </div>
-          <p id="pet-details" class="pet-details"></p>
+    <div class="app" id="app">
+      <header class="topbar">
+        <a class="logo" href="#home" aria-label="Pet Diary — на главную">
+          <canvas class="logo-icon" id="logo-icon" width="18" height="18" aria-hidden="true"></canvas>
+          <span>PET DIARY</span>
+        </a>
+        <div class="pet-switcher" id="pet-switcher" role="tablist" aria-label="Питомцы"></div>
+        <div class="topbar-tools">
+          <button class="icon-btn" id="sound-toggle" type="button" aria-label="Звук"></button>
+          <button class="icon-btn" id="theme-toggle" type="button" aria-label="Тема"></button>
+          <a class="icon-btn" href="#settings" aria-label="Настройки">⚙️</a>
         </div>
+      </header>
 
-        <form id="pet-form">
-          <h2>Карточка питомца</h2>
-          <label>
-            Кличка
-            <input name="name" required maxlength="40" placeholder="Например, Барсик" />
-          </label>
-          <label>
-            Вид
-            <select name="species">
-              <option value="Кошка">Кошка</option>
-              <option value="Собака">Собака</option>
-              <option value="Грызун">Грызун</option>
-              <option value="Птица">Птица</option>
-              <option value="Другое">Другое</option>
-            </select>
-          </label>
-          <label>
-            Порода
-            <input name="breed" maxlength="40" placeholder="Необязательно" />
-          </label>
-          <label>
-            Дата рождения
-            <input name="birthDate" type="date" />
-          </label>
-          <div class="form-buttons">
-            <button type="submit">Сохранить</button>
-            <button type="button" id="pet-cancel-button" class="secondary" hidden>Отмена</button>
+      <main id="main" tabindex="-1">
+        <!-- Онбординг: первый питомец -->
+        <section class="view" data-view="welcome" hidden>
+          <div class="welcome">
+            <h1 class="pixel-title">Привет!</h1>
+            <p class="lead">Заведём дневник твоего питомца. Он оживёт на экране и будет радоваться твоей заботе.</p>
+            <div class="card">
+              <canvas class="welcome-preview" id="welcome-preview" aria-hidden="true"></canvas>
+              <div id="welcome-form"></div>
+            </div>
+            <p class="muted small">Есть резервная копия? <button class="link-btn" type="button" id="welcome-import">Восстановить из файла</button></p>
           </div>
-        </form>
-      </section>
+        </section>
 
-      <div class="actions">
-        <button data-action="Покормил">🍖 Покормил</button>
-        <button data-action="Погулял">🦮 Погулял</button>
-        <button data-action="Поиграл">🎾 Поиграл</button>
-        <button data-action="Дал лекарство">💊 Дал лекарство</button>
-        <button data-action="Поспал">😴 Поспал</button>
-        <button data-action="Почистил">🧼 Почистил</button>
-      </div>
+        <!-- Главная -->
+        <section class="view" data-view="home" hidden>
+          <div id="reminders"></div>
 
-      <div class="journal-header">
-        <h2>Журнал</h2>
-        <button id="clear-button" class="secondary">Очистить</button>
-      </div>
+          <div class="card scene-card">
+            <canvas class="scene" id="scene" aria-label="Пиксельный питомец. Нажми, чтобы погладить" role="img"></canvas>
+            <div class="scene-info">
+              <div>
+                <h1 class="pet-name" id="pet-name"></h1>
+                <p class="pet-meta" id="pet-meta"></p>
+              </div>
+              <div class="mood" id="mood"></div>
+            </div>
+            <p class="scene-hint muted small">Нажми на питомца, чтобы погладить 💕</p>
+          </div>
 
-      <p id="empty-message" class="empty">Пока записей нет — нажмите кнопку выше.</p>
-      <ul id="journal"></ul>
-    </main>
+          <div class="card">
+            <h2 class="card-title">Состояние</h2>
+            <div class="needs" id="needs"></div>
+          </div>
 
-    <script src="pet-card.js"></script>
-    <script src="script.js"></script>
+          <div class="card">
+            <h2 class="card-title">Быстрые действия</h2>
+            <div class="actions" id="actions"></div>
+            <form class="note-form" id="note-form">
+              <input id="note-input" maxlength="200" placeholder="Заметка: съел половину порции, чихал…" aria-label="Текст заметки" />
+              <button type="submit" class="btn">📝</button>
+            </form>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h2 class="card-title">Сегодня</h2>
+              <a href="#journal" class="link-btn">Весь журнал →</a>
+            </div>
+            <ul class="timeline" id="today-list"></ul>
+          </div>
+        </section>
+
+        <!-- Журнал -->
+        <section class="view" data-view="journal" hidden>
+          <div class="view-head">
+            <h1 class="pixel-title">Журнал</h1>
+            <button class="btn" type="button" id="journal-add">＋ Запись</button>
+          </div>
+          <div class="toolbar">
+            <input type="search" id="journal-search" placeholder="Поиск по заметкам…" aria-label="Поиск" />
+          </div>
+          <div class="chips" id="journal-filters" role="group" aria-label="Фильтр по типу"></div>
+          <div id="journal-list"></div>
+          <button class="btn btn-ghost btn-block" type="button" id="journal-more" hidden>Показать ещё</button>
+        </section>
+
+        <!-- Здоровье -->
+        <section class="view" data-view="health" hidden>
+          <div class="view-head">
+            <h1 class="pixel-title">Здоровье</h1>
+            <button class="btn" type="button" id="health-add">＋ Событие</button>
+          </div>
+          <div class="card">
+            <h2 class="card-title">Скоро</h2>
+            <ul class="list" id="health-upcoming"></ul>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <h2 class="card-title">Вес</h2>
+              <button class="btn btn-small" type="button" id="weight-add">＋ Взвесить</button>
+            </div>
+            <div id="weight-summary" class="stat-row"></div>
+            <div id="weight-chart" class="chart-wrap"></div>
+            <ul class="list compact" id="weight-list"></ul>
+          </div>
+          <div class="card">
+            <h2 class="card-title">Медицинская карта</h2>
+            <div class="chips" id="health-filters"></div>
+            <ul class="list" id="health-list"></ul>
+          </div>
+        </section>
+
+        <!-- Расходы -->
+        <section class="view" data-view="money" hidden>
+          <div class="view-head">
+            <h1 class="pixel-title">Расходы</h1>
+            <button class="btn" type="button" id="expense-add">＋ Расход</button>
+          </div>
+          <div class="card">
+            <div class="month-nav">
+              <button class="icon-btn" type="button" id="month-prev" aria-label="Предыдущий месяц">◀</button>
+              <h2 class="card-title" id="month-title"></h2>
+              <button class="icon-btn" type="button" id="month-next" aria-label="Следующий месяц">▶</button>
+            </div>
+            <div class="stat-row" id="money-summary"></div>
+            <div id="money-categories" class="category-bars"></div>
+          </div>
+          <div class="card">
+            <h2 class="card-title">За полгода</h2>
+            <div id="money-chart" class="chart-wrap"></div>
+          </div>
+          <div class="card">
+            <h2 class="card-title">Траты месяца</h2>
+            <ul class="list" id="money-list"></ul>
+          </div>
+        </section>
+
+        <!-- Статистика и достижения -->
+        <section class="view" data-view="stats" hidden>
+          <h1 class="pixel-title">Статистика</h1>
+          <div class="tiles" id="stats-tiles"></div>
+          <div class="card">
+            <h2 class="card-title">Активность за 7 дней</h2>
+            <div id="stats-week" class="chart-wrap"></div>
+          </div>
+          <div class="card">
+            <h2 class="card-title">Календарь заботы</h2>
+            <div class="heatmap" id="stats-heatmap"></div>
+            <div class="heatmap-legend muted small">меньше <i></i><i></i><i></i><i></i> больше</div>
+          </div>
+          <div class="card">
+            <h2 class="card-title">Чем занимались</h2>
+            <div id="stats-types" class="category-bars"></div>
+          </div>
+          <div class="card">
+            <h2 class="card-title">Достижения <span class="muted" id="ach-count"></span></h2>
+            <div class="achievements" id="achievements"></div>
+          </div>
+        </section>
+
+        <!-- Настройки -->
+        <section class="view" data-view="settings" hidden>
+          <h1 class="pixel-title">Настройки</h1>
+          <div class="card">
+            <div class="card-head">
+              <h2 class="card-title">Питомцы</h2>
+              <button class="btn btn-small" type="button" id="pet-add">＋ Добавить</button>
+            </div>
+            <ul class="list" id="pets-list"></ul>
+          </div>
+          <div class="card settings">
+            <h2 class="card-title">Оформление и звук</h2>
+            <label class="setting">
+              <span>Тема</span>
+              <select id="set-theme">
+                <option value="auto">Как в системе</option>
+                <option value="light">Светлая</option>
+                <option value="dark">Тёмная</option>
+              </select>
+            </label>
+            <label class="setting">
+              <span>8-битные звуки</span>
+              <input type="checkbox" id="set-sound" class="switch" />
+            </label>
+            <label class="setting">
+              <span>Напоминания о прививках и днях рождения</span>
+              <input type="checkbox" id="set-notify" class="switch" />
+            </label>
+            <label class="setting">
+              <span>Валюта</span>
+              <select id="set-currency">
+                <option value="RUB">₽ Рубль</option>
+                <option value="BYN">Br Белорусский рубль</option>
+                <option value="KZT">₸ Тенге</option>
+                <option value="UAH">₴ Гривна</option>
+                <option value="USD">$ Доллар</option>
+                <option value="EUR">€ Евро</option>
+              </select>
+            </label>
+          </div>
+          <div class="card settings">
+            <h2 class="card-title">Данные</h2>
+            <p class="muted small">Все записи хранятся только в этом браузере. Делай резервную копию, чтобы перенести дневник на другое устройство.</p>
+            <div class="button-row">
+              <button class="btn" type="button" id="export-btn">💾 Скачать копию</button>
+              <button class="btn btn-ghost" type="button" id="import-btn">📂 Восстановить</button>
+              <button class="btn btn-ghost" type="button" id="csv-btn">📊 Журнал в CSV</button>
+              <button class="btn btn-ghost" type="button" id="print-btn">🖨️ Паспорт питомца</button>
+            </div>
+            <input type="file" id="import-file" accept="application/json,.json" hidden />
+            <p id="storage-warning" class="warning small" hidden>⚠️ Браузер не даёт сохранять данные (приватный режим?). Записи пропадут после закрытия вкладки.</p>
+          </div>
+          <div class="card settings danger-zone">
+            <h2 class="card-title">Опасная зона</h2>
+            <button class="btn btn-danger" type="button" id="reset-btn">Стереть все данные</button>
+          </div>
+          <p class="about muted small">
+            Pet Diary · сделано с 💕 Дарьей Сидоренко ·
+            <a href="https://t.me/dasha_si1" target="_blank" rel="noopener">Telegram</a> ·
+            <a href="https://github.com/dasha-sidorenko/pet-diary" target="_blank" rel="noopener">GitHub</a>
+          </p>
+        </section>
+      </main>
+
+      <nav class="tabbar" id="tabbar" aria-label="Разделы">
+        <a href="#home" data-tab="home"><span class="tab-icon">🏠</span><span>Главная</span></a>
+        <a href="#journal" data-tab="journal"><span class="tab-icon">📖</span><span>Журнал</span></a>
+        <a href="#health" data-tab="health"><span class="tab-icon">❤️</span><span>Здоровье</span><b class="badge" id="health-badge" hidden></b></a>
+        <a href="#money" data-tab="money"><span class="tab-icon">💰</span><span>Расходы</span></a>
+        <a href="#stats" data-tab="stats"><span class="tab-icon">🏆</span><span>Итоги</span></a>
+      </nav>
+    </div>
+
+    <dialog class="modal" id="modal">
+      <form method="dialog" class="modal-body" id="modal-form" novalidate></form>
+    </dialog>
+
+    <div class="toasts" id="toasts" aria-live="polite"></div>
+    <div class="print-area" id="print-area" aria-hidden="true"></div>
+
+    <script src="js/utils.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/sprites.js"></script>
+    <script src="js/sound.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/views/home.js"></script>
+    <script src="js/views/journal.js"></script>
+    <script src="js/views/health.js"></script>
+    <script src="js/views/money.js"></script>
+    <script src="js/views/stats.js"></script>
+    <script src="js/views/settings.js"></script>
+    <script src="js/app.js"></script>
   </body>
 </html>

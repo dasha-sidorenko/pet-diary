@@ -51,6 +51,66 @@ button.secondary:hover {
   background: #eee7dd;
 }
 
+.pet-card {
+  margin: 20px 0;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.pet-card h2 {
+  margin: 0 0 4px;
+}
+
+.pet-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pet-details {
+  margin: 0;
+  color: #8a8178;
+}
+
+#pet-form {
+  display: grid;
+  gap: 10px;
+}
+
+#pet-form label {
+  display: grid;
+  gap: 4px;
+  font-size: 0.9em;
+  color: #5c554e;
+}
+
+#pet-form input,
+#pet-form select {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid #e2d9cd;
+  border-radius: 8px;
+  background: #fffdf9;
+  color: inherit;
+}
+
+#pet-form input:focus,
+#pet-form select:focus {
+  outline: 2px solid #e07a3f;
+  outline-offset: 1px;
+}
+
+.form-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+[hidden] {
+  display: none !important;
+}
+
 .journal-header {
   display: flex;
   justify-content: space-between;

@@ -11,6 +11,46 @@
       <h1>🐾 Дневник питомца</h1>
       <p>Здесь я буду отмечать кормления, прогулки и лекарства.</p>
 
+      <section id="pet-card" class="pet-card">
+        <div id="pet-view" hidden>
+          <div class="pet-card-header">
+            <h2 id="pet-name"></h2>
+            <button id="pet-edit-button" class="secondary">Изменить</button>
+          </div>
+          <p id="pet-details" class="pet-details"></p>
+        </div>
+
+        <form id="pet-form">
+          <h2>Карточка питомца</h2>
+          <label>
+            Кличка
+            <input name="name" required maxlength="40" placeholder="Например, Барсик" />
+          </label>
+          <label>
+            Вид
+            <select name="species">
+              <option value="Кошка">Кошка</option>
+              <option value="Собака">Собака</option>
+              <option value="Грызун">Грызун</option>
+              <option value="Птица">Птица</option>
+              <option value="Другое">Другое</option>
+            </select>
+          </label>
+          <label>
+            Порода
+            <input name="breed" maxlength="40" placeholder="Необязательно" />
+          </label>
+          <label>
+            Дата рождения
+            <input name="birthDate" type="date" />
+          </label>
+          <div class="form-buttons">
+            <button type="submit">Сохранить</button>
+            <button type="button" id="pet-cancel-button" class="secondary" hidden>Отмена</button>
+          </div>
+        </form>
+      </section>
+
       <div class="actions">
         <button data-action="Покормил">🍖 Покормил</button>
         <button data-action="Погулял">🦮 Погулял</button>
@@ -29,6 +69,7 @@
       <ul id="journal"></ul>
     </main>
 
+    <script src="pet-card.js"></script>
     <script src="script.js"></script>
   </body>
 </html>

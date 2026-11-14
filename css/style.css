@@ -1696,3 +1696,44 @@ input[type="radio"]:focus-visible + .choice {
 .tile-label {
   line-height: 1.35;
 }
+
+/* ---------- Быстрая правка записей ---------- */
+
+.entry-body {
+  cursor: text;
+}
+
+.entry-note-empty {
+  font-size: 0.85rem;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.entry:hover .entry-note-empty,
+.entry:focus-within .entry-note-empty {
+  opacity: 0.7;
+}
+
+@media (hover: none) {
+  .entry-note-empty {
+    opacity: 0.55;
+  }
+}
+
+input.inline-edit {
+  margin-top: 4px;
+  padding: 6px 8px;
+  font-size: 0.95rem;
+}
+
+.time-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.time-shortcuts .chip {
+  padding: 4px 10px;
+  font-size: 0.85rem;
+}

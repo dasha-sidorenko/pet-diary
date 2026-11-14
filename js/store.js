@@ -10,14 +10,14 @@
 
   // Быстрые действия. Чтобы добавить новое — достаточно дописать строку сюда.
   const ACTIONS = [
-    { type: "feed", label: "Покормил", icon: "🍖", effect: "food" },
-    { type: "water", label: "Налил воды", icon: "💧", effect: "drop" },
-    { type: "walk", label: "Погулял", icon: "🦮", effect: "music" },
-    { type: "play", label: "Поиграл", icon: "🎾", effect: "heart" },
+    { type: "feed", label: "Кормление", icon: "🍖", effect: "food" },
+    { type: "water", label: "Вода", icon: "💧", effect: "drop" },
+    { type: "walk", label: "Прогулка", icon: "🦮", effect: "music" },
+    { type: "play", label: "Игра", icon: "🎾", effect: "heart" },
     { type: "treat", label: "Вкусняшка", icon: "🍪", effect: "food" },
     { type: "med", label: "Лекарство", icon: "💊", effect: "plus" },
-    { type: "groom", label: "Почистил", icon: "🧼", effect: "bubble" },
-    { type: "sleep", label: "Поспал", icon: "😴", effect: "zzz" },
+    { type: "groom", label: "Уход", icon: "🧼", effect: "bubble" },
+    { type: "sleep", label: "Сон", icon: "😴", effect: "zzz" },
     { type: "toilet", label: "Туалет", icon: "🚽", effect: "sparkle" },
     { type: "train", label: "Тренировка", icon: "🎓", effect: "star" },
   ];

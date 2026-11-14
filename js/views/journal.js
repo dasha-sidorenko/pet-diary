@@ -45,13 +45,76 @@
       },
       onDelete: isNew ? null : () => PD.ui.removeWithUndo("entries", entry.id),
     });
+    addTimeShortcuts();
+  }
+
+  // Кнопки под полем времени: «Сейчас», «−15 мин», «−1 ч», «Вчера»
+  function addTimeShortcuts() {
+    const form = U.$("#modal-form");
+    const input = form.elements.time;
+    if (!input) return;
+    const shift = function (ms) {
+      const base = ms === 0 ? Date.now() : new Date(input.value).getTime() || Date.now();
+      input.value = U.toLocalInput(Math.min(Date.now(), base + ms));
+      PD.sound("tap");
+    };
+    const row = el(
+      "div",
+      { class: "time-shortcuts" },
+      [
+        ["Сейчас", 0],
+        ["−15 мин", -15 * 60 * 1000],
+        ["−1 ч", -U.HOUR],
+        ["−1 день", -U.DAY],
+      ].map((s) => el("button", { type: "button", class: "chip", text: s[0], onclick: () => shift(s[1]) }))
+    );
+    input.after(row);
+  }
+
+  // Правка заметки прямо в ленте: клик по тексту → поле ввода, Enter сохраняет, Esc отменяет
+  function editInline(entry, body) {
+    if (body.querySelector("input")) return;
+    const original = Array.from(body.childNodes);
+    const input = el("input", { class: "inline-edit", maxlength: 300, value: entry.note || "", placeholder: "Добавь заметку…", "aria-label": "Текст заметки" });
+    let done = false;
+    const finish = function (save) {
+      if (done) return;
+      done = true;
+      const text = input.value.trim();
+      if (save && text !== (entry.note || "")) {
+        if (entry.type === "note" && !text) {
+          PD.ui.toast("Заметка не может быть пустой", { icon: "⚠️" });
+          body.replaceChildren(...original);
+          return;
+        }
+        S.updateItem("entries", entry.id, { note: text });
+        PD.sound("save");
+      } else {
+        body.replaceChildren(...original);
+      }
+    };
+    input.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") finish(true);
+      if (event.key === "Escape") finish(false);
+    });
+    input.addEventListener("blur", () => finish(true));
+    body.replaceChildren(original[0], input);
+    input.focus();
+  }
+
+  function repeatEntry(entry) {
+    S.addEntry(entry.type, entry.note);
+    PD.sound("action");
+    PD.ui.toast("Повторено: " + S.actionInfo(entry.type).label, { icon: "↻" });
   }
 
   // Одна строка записи — используется и на главной, и в журнале
   function entryItem(entry) {
     const info = S.actionInfo(entry.type);
-    const body = el("div", { class: "entry-body" }, el("span", { class: "entry-title", text: info.label }));
+    const body = el("div", { class: "entry-body", title: "Нажми, чтобы изменить заметку" }, el("span", { class: "entry-title", text: info.label }));
     if (entry.note) body.append(el("span", { class: "entry-note", text: entry.note }));
+    else body.append(el("span", { class: "entry-note entry-note-empty", text: "+ заметка" }));
+    body.addEventListener("click", () => editInline(entry, body));
     return el(
       "li",
       { class: "entry entry-" + entry.type },
@@ -61,7 +124,8 @@
       el(
         "div",
         { class: "entry-actions" },
-        el("button", { type: "button", class: "icon-btn small", "aria-label": "Изменить", text: "✎", onclick: () => openEntryForm(entry) }),
+        el("button", { type: "button", class: "icon-btn small", "aria-label": "Повторить сейчас", title: "Повторить сейчас", text: "↻", onclick: () => repeatEntry(entry) }),
+        el("button", { type: "button", class: "icon-btn small", "aria-label": "Изменить", title: "Изменить", text: "✎", onclick: () => openEntryForm(entry) }),
         el("button", { type: "button", class: "icon-btn small danger", "aria-label": "Удалить", text: "✕", onclick: () => PD.ui.removeWithUndo("entries", entry.id) })
       )
     );

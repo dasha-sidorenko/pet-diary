@@ -11,7 +11,7 @@
   let awakeUntil = 0;
 
   const MOOD_TEXT = {
-    happy: { icon: "😊", text: "Доволен жизнью" },
+    happy: { icon: "😊", text: "Жизнь удалась" },
     neutral: { icon: "🙂", text: "Всё в порядке" },
     sad: { icon: "🥺", text: "Скучает по заботе" },
     sleep: { icon: "💤", text: "Сладко спит" },

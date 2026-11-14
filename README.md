@@ -4,6 +4,8 @@
 
 A simple web app for pet owners to log their pet's daily life: feeding, walks, play, medication, sleep and grooming.
 
+**Демо / Live demo:** https://j2jyd58wbc-ship-it.github.io/pet-diary/
+
 ## Статус / Status
 
 🚧 **В разработке / Work in progress**

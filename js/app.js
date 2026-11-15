@@ -24,7 +24,13 @@
     return !!(darkQuery && darkQuery.matches);
   }
 
+  // Детский режим — класс на <html>: крупные кнопки, скрытые расходы
+  function applyKidMode() {
+    document.documentElement.classList.toggle("kid-mode", PD.family.isKidMode());
+  }
+
   function applyTheme() {
+    applyKidMode();
     const theme = S.state.settings.theme;
     if (theme === "auto") delete document.documentElement.dataset.theme;
     else document.documentElement.dataset.theme = theme;
@@ -32,7 +38,7 @@
     btn.textContent = isDark() ? "🌙" : "☀️";
     btn.title = isDark() ? "Тёмная тема" : "Светлая тема";
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.content = isDark() ? "#1b1530" : "#2b1d2e";
+    if (meta) meta.content = isDark() ? "#0d0e13" : "#f3f4f7";
   }
 
   function applySound() {
@@ -75,13 +81,34 @@
   function renderBadge() {
     const pet = S.activePet();
     const badge = U.$("#health-badge");
-    const n = pet ? S.reminders(pet.id).filter((r) => !r.birthday && r.days <= 7).length : 0;
+    const n = pet ? S.reminders(pet.id).filter((r) => r.item && r.days <= 7).length : 0;
     badge.hidden = n === 0;
     badge.textContent = n;
   }
 
   // ---------- Онбординг ----------
+  // Шаг 0: кто будет вести дневник — от ответа зависит режим
+  const AUDIENCE = {
+    solo: { kidMode: false },
+    family: { kidMode: false },
+    kid: { kidMode: true },
+  };
+
+  function renderWelcomeStep() {
+    const asked = !!S.state.settings.audience;
+    U.$("#welcome-who").hidden = asked;
+    U.$("#welcome-card").hidden = !asked;
+  }
+
+  function chooseAudience(who) {
+    S.updateSettings(Object.assign({ audience: who }, AUDIENCE[who]));
+    PD.sound("tap");
+    renderWelcomeStep();
+    renderWelcome();
+  }
+
   function renderWelcome() {
+    renderWelcomeStep();
     const preview = U.$("#welcome-preview");
     if (!welcomeScene) {
       welcomeScene = new PD.sprites.PetScene(preview);
@@ -104,6 +131,13 @@
         PD.ui.toast("Добро пожаловать, " + v.name + "!", { icon: "🎉" });
         location.hash = "#home";
         setTimeout(() => PD.views.home.celebrate(), 300);
+        // Семье сразу предлагаем добавить первого человека — того, кто держит телефон
+        if (S.state.settings.audience === "family" && !S.state.members.length) {
+          setTimeout(function () {
+            PD.ui.toast("Добавь себя, а потом остальных в «Настройки → Семья»", { icon: "👨‍👩‍👧", timeout: 5000 });
+            PD.family.openMemberForm(null);
+          }, 900);
+        }
       },
     });
   }
@@ -113,6 +147,8 @@
     let name = location.hash.replace("#", "") || "home";
     if (!VIEWS.includes(name)) name = "home";
     if (!S.state.pets.length && name !== "settings") name = "welcome";
+    // В детском режиме расходы скрыты
+    if (name === "money" && PD.family.isKidMode()) name = "home";
     const changed = name !== current;
     current = name;
 
@@ -135,6 +171,7 @@
     applySound();
     renderSwitcher();
     renderBadge();
+    PD.family.renderTopbar();
     if (current && current !== "welcome" && PD.views[current]) PD.views[current].render();
   }
 
@@ -145,6 +182,9 @@
     Object.keys(PD.views).forEach(function (key) {
       if (PD.views[key] && typeof PD.views[key].init === "function") PD.views[key].init();
     });
+
+    U.$$(".who-option").forEach((b) => b.addEventListener("click", () => chooseAudience(b.dataset.who)));
+    U.$("#member-btn").addEventListener("click", () => PD.family.openPicker());
 
     U.$("#theme-toggle").addEventListener("click", function () {
       S.updateSettings({ theme: isDark() ? "light" : "dark" });
@@ -190,6 +230,19 @@
 
     setTimeout(PD.ui.checkAchievements, 1000);
     setTimeout(PD.ui.notifyReminders, 1500);
+
+    // Ярлык с иконки приложения: «Покормил», «Погулял» (?do=feed)
+    const shortcut = new URLSearchParams(location.search).get("do");
+    if (shortcut) {
+      history.replaceState(null, "", location.pathname + "#home");
+      setTimeout(() => PD.views.home.runShortcut(shortcut), 600);
+    }
+
+    // Подчищаем фото, на которые больше нет ссылок (удалённые записи)
+    setTimeout(function () {
+      const used = S.state.entries.map((e) => e.photoId).concat(S.state.pets.map((p) => p.photoId)).filter(Boolean);
+      PD.photos.cleanup(used);
+    }, 5000);
 
     // Офлайн-режим и установка на телефон (работает только по http/https)
     if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {

@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Я потерялся! — Pet Diary</title>
+    <meta name="theme-color" content="#ff7a45" />
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+    <style>
+      /* Страница для того, кто нашёл питомца: открывается по QR с бирки или листовки.
+         Все данные — в части ссылки после #, она не отправляется на сервер. */
+      :root {
+        --bg: #fff6ef;
+        --card: #ffffff;
+        --ink: #2a2431;
+        --muted: #776e7c;
+        --accent: #ff7a45;
+        --green: #2fa866;
+        color-scheme: light;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px 16px;
+      }
+      main {
+        width: 100%;
+        max-width: 440px;
+        background: var(--card);
+        border-radius: 24px;
+        box-shadow: 0 12px 40px rgba(42, 36, 49, 0.12);
+        padding: 28px 22px;
+        text-align: center;
+      }
+      .emoji {
+        font-size: 64px;
+        line-height: 1;
+      }
+      h1 {
+        margin: 12px 0 6px;
+        font-size: 1.7rem;
+        line-height: 1.2;
+      }
+      .lead {
+        margin: 0 0 18px;
+        color: var(--muted);
+        font-size: 1.05rem;
+      }
+      .facts {
+        text-align: left;
+        background: #faf6f1;
+        border-radius: 16px;
+        padding: 12px 16px;
+        margin: 0 0 20px;
+      }
+      .facts p {
+        margin: 6px 0;
+      }
+      .btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 16px;
+        margin-top: 10px;
+        border-radius: 16px;
+        font-size: 1.15rem;
+        font-weight: 700;
+        text-decoration: none;
+        color: #fff;
+        background: var(--green);
+      }
+      .btn.secondary {
+        background: #efe9e2;
+        color: var(--ink);
+      }
+      .tips {
+        margin: 22px 0 0;
+        text-align: left;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+      .tips li {
+        margin-bottom: 6px;
+      }
+      footer {
+        margin-top: 18px;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      footer a {
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main id="card">
+      <div class="emoji" id="emoji">🐾</div>
+      <h1 id="title">Здравствуйте!</h1>
+      <p class="lead" id="lead">Похоже, ссылка повреждена. Посмотрите номер телефона на бирке или листовке.</p>
+      <div class="facts" id="facts" hidden></div>
+      <div id="actions"></div>
+      <ul class="tips" id="tips" hidden>
+        <li>Если можно — дайте воды и подержите в тёплом спокойном месте.</li>
+        <li>Не кормите незнакомой едой: у питомца может быть аллергия.</li>
+        <li>Если не дозвонились — в любой ветклинике бесплатно проверят чип.</li>
+      </ul>
+      <footer>Спасибо, что не прошли мимо 💛 · <a href="./">Pet Diary</a></footer>
+    </main>
+    <script>
+      (function () {
+        "use strict";
+        var EMOJI = { dog: "🐶", cat: "🐱", rodent: "🐹", bird: "🐦", other: "🐾" };
+
+        function decode(hash) {
+          var raw = hash.replace(/^#d=/, "").replace(/-/g, "+").replace(/_/g, "/");
+          while (raw.length % 4) raw += "=";
+          var bin = atob(raw);
+          var bytes = new Uint8Array(bin.length);
+          for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          return JSON.parse(new TextDecoder().decode(bytes));
+        }
+
+        function el(tag, attrs, text) {
+          var node = document.createElement(tag);
+          Object.keys(attrs || {}).forEach(function (k) {
+            node.setAttribute(k, attrs[k]);
+          });
+          if (text) node.textContent = text;
+          return node;
+        }
+
+        var data;
+        try {
+          data = decode(location.hash);
+        } catch (e) {
+          return;
+        }
+        if (!data || typeof data.n !== "string") return;
+
+        var name = data.n.slice(0, 40);
+        var female = data.x === "f";
+        document.title = name + " потерял" + (female ? "ась" : "ся") + " — Pet Diary";
+        document.getElementById("emoji").textContent = EMOJI[data.s] || "🐾";
+        document.getElementById("title").textContent = "Меня зовут " + name + "!";
+        document.getElementById("lead").textContent = "Кажется, я потерял" + (female ? "ась" : "ся") + ". Пожалуйста, позвоните по номеру ниже — меня очень ждут дома.";
+
+        var facts = document.getElementById("facts");
+        var rows = [];
+        if (data.a) rows.push(["⛔ Мне нельзя", data.a]);
+        if (data.m) rows.push(["💡 Важно", data.m]);
+        if (data.c) rows.push(["🔖 Чип", data.c]);
+        rows.forEach(function (r) {
+          var p = el("p");
+          p.append(el("strong", {}, r[0] + ": "), document.createTextNode(String(r[1]).slice(0, 200)));
+          facts.append(p);
+        });
+        facts.hidden = !rows.length;
+
+        // В ссылку tel: пропускаем только цифры и плюс
+        var phone = String(data.p || "").replace(/[^\d+]/g, "");
+        var actions = document.getElementById("actions");
+        if (phone.length >= 5) {
+          actions.append(el("a", { class: "btn", href: "tel:" + phone }, "📞 Позвонить: " + data.p));
+          var sms = "Здравствуйте! Я нашёл(ла) " + name + ".";
+          actions.append(el("a", { class: "btn secondary", href: "sms:" + phone + "?body=" + encodeURIComponent(sms) }, "💬 Написать SMS"));
+        }
+        document.getElementById("tips").hidden = false;
+      })();
+    </script>
+  </body>
+</html>

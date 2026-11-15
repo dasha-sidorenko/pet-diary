@@ -1,16 +1,25 @@
 // Service worker: приложение открывается и работает без интернета.
 // При изменении файлов увеличь версию — старый кеш удалится автоматически.
-const CACHE = "pet-diary-v2.0.3";
+const CACHE = "pet-diary-v3.2.0";
 
 const ASSETS = [
   "./",
   "index.html",
   "css/style.css",
+  "css/glass.css",
   "js/utils.js",
   "js/store.js",
   "js/sprites.js",
   "js/sound.js",
   "js/charts.js",
+  "js/weather.js",
+  "js/report.js",
+  "js/photos.js",
+  "js/content.js",
+  "js/family.js",
+  "js/lost.js",
+  "js/vendor/qrcode.min.js",
+  "found.html",
   "js/ui.js",
   "js/views/home.js",
   "js/views/journal.js",

@@ -8,7 +8,11 @@
       name="description"
       content="Дневник питомца в пиксельном стиле: кормления, прогулки, прививки с напоминаниями, вес, расходы и статистика. Работает офлайн, данные хранятся только у вас."
     />
-    <meta name="theme-color" content="#2b1d2e" />
+    <meta name="theme-color" content="#f3f4f7" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Pet Diary" />
     <meta property="og:title" content="Pet Diary — пиксельный дневник питомца" />
     <meta property="og:description" content="Заботьтесь о питомце как в тамагочи, только по-настоящему." />
     <meta property="og:type" content="website" />
@@ -18,10 +22,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Press+Start+2P&display=swap&subset=cyrillic"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800&family=Press+Start+2P&display=swap&subset=cyrillic"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/glass.css" />
     <script>
       // Тему ставим до отрисовки, чтобы не было вспышки светлого экрана
       try {
@@ -38,10 +43,11 @@
       <header class="topbar">
         <a class="logo" href="#home" aria-label="Pet Diary — на главную">
           <canvas class="logo-icon" id="logo-icon" width="18" height="18" aria-hidden="true"></canvas>
-          <span>PET DIARY</span>
+          <span>Pet Diary</span>
         </a>
         <div class="pet-switcher" id="pet-switcher" role="tablist" aria-label="Питомцы"></div>
         <div class="topbar-tools">
+          <button class="icon-btn member-btn" id="member-btn" type="button" hidden></button>
           <button class="icon-btn" id="sound-toggle" type="button" aria-label="Звук"></button>
           <button class="icon-btn" id="theme-toggle" type="button" aria-label="Тема"></button>
           <a class="icon-btn" href="#settings" aria-label="Настройки">⚙️</a>
@@ -54,7 +60,21 @@
           <div class="welcome">
             <h1 class="pixel-title">Привет!</h1>
             <p class="lead">Заведём дневник твоего питомца. Он оживёт на экране и будет радоваться твоей заботе.</p>
-            <div class="card">
+            <div class="card welcome-who" id="welcome-who" hidden>
+              <h2 class="card-title">Кто будет вести дневник?</h2>
+              <div class="who-grid">
+                <button type="button" class="who-option" data-who="solo">
+                  <span class="who-icon">🙋</span><strong>Я сам(а)</strong><span class="muted small">Всё под рукой: режим, здоровье, расходы</span>
+                </button>
+                <button type="button" class="who-option" data-who="family">
+                  <span class="who-icon">👨‍👩‍👧</span><strong>Вся семья</strong><span class="muted small">Видно, кто покормил, дети получают обязанности</span>
+                </button>
+                <button type="button" class="who-option" data-who="kid">
+                  <span class="who-icon">🧒</span><strong>Ребёнок</strong><span class="muted small">Крупные кнопки, без расходов и сложных настроек</span>
+                </button>
+              </div>
+            </div>
+            <div class="card" id="welcome-card">
               <canvas class="welcome-preview" id="welcome-preview" aria-hidden="true"></canvas>
               <div id="welcome-form"></div>
             </div>
@@ -67,7 +87,8 @@
           <div id="reminders"></div>
 
           <div class="card scene-card">
-            <canvas class="scene" id="scene" aria-label="Пиксельный питомец. Нажми, чтобы погладить" role="img"></canvas>
+            <canvas class="scene" id="scene" aria-label="Питомец. Нажми, чтобы погладить" role="img"></canvas>
+            <div class="speech" id="speech" role="status" hidden></div>
             <div class="scene-info">
               <div>
                 <h1 class="pet-name" id="pet-name"></h1>
@@ -78,18 +99,35 @@
             <p class="scene-hint muted small">Нажми на питомца, чтобы погладить 💕</p>
           </div>
 
+          <div class="card" id="chores-card" hidden>
+            <h2 class="card-title">Обязанности</h2>
+            <div class="chores" id="chores"></div>
+          </div>
+
           <div class="card">
-            <h2 class="card-title">Состояние</h2>
-            <div class="needs" id="needs"></div>
+            <div class="card-head">
+              <h2 class="card-title">План на сегодня</h2>
+              <button class="link-btn" type="button" id="plan-setup">Настроить</button>
+            </div>
+            <div class="plan" id="plan"></div>
+            <div class="weather" id="weather" hidden></div>
           </div>
 
           <div class="card">
             <h2 class="card-title">Быстрые действия</h2>
             <div class="actions" id="actions"></div>
-            <form class="note-form" id="note-form">
-              <input id="note-input" maxlength="200" placeholder="Например: ужин не доеден, чихает…" aria-label="Текст заметки" />
-              <button type="submit" class="btn">📝</button>
+            <form class="note-form composer" id="note-form">
+              <input id="note-input" maxlength="200" placeholder="✨ Заметка: ужин не доеден, чихает…" aria-label="Текст заметки" />
+              <button type="button" class="composer-btn" id="photo-btn" aria-label="Добавить фото">📷</button>
+              <button type="submit" class="btn composer-send" aria-label="Сохранить заметку">↑</button>
             </form>
+            <input type="file" id="photo-input" accept="image/*" hidden />
+            <button class="btn btn-ghost btn-block symptom-btn" type="button" id="symptom-btn">🤒 Что-то не так</button>
+          </div>
+
+          <div class="card needs-card">
+            <h2 class="card-title">Состояние</h2>
+            <div class="needs" id="needs"></div>
           </div>
 
           <div class="card">
@@ -98,6 +136,19 @@
               <a href="#journal" class="link-btn">Весь журнал →</a>
             </div>
             <ul class="timeline" id="today-list"></ul>
+          </div>
+
+          <div class="card" id="memories-card" hidden>
+            <h2 class="card-title" id="memories-title"></h2>
+            <div id="memories"></div>
+          </div>
+
+          <div class="card fact-card">
+            <div class="card-head">
+              <h2 class="card-title"><span class="ai-spark" aria-hidden="true">✦</span> Знаешь ли ты?</h2>
+              <button class="link-btn" type="button" id="fact-more">Ещё факт</button>
+            </div>
+            <p class="fact-text" id="fact-text"></p>
           </div>
         </section>
 
@@ -120,6 +171,14 @@
           <div class="view-head">
             <h1 class="pixel-title">Здоровье</h1>
             <button class="btn" type="button" id="health-add">＋ Событие</button>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <h2 class="card-title">Самочувствие</h2>
+              <button class="btn btn-small btn-ghost" type="button" id="symptom-add">🤒 Симптом</button>
+            </div>
+            <ul class="list" id="symptom-list"></ul>
+            <button class="btn btn-block" type="button" id="vet-report-btn">📋 Отчёт для врача</button>
           </div>
           <div class="card">
             <h2 class="card-title">Скоро</h2>
@@ -168,7 +227,10 @@
 
         <!-- Статистика и достижения -->
         <section class="view" data-view="stats" hidden>
-          <h1 class="pixel-title">Статистика</h1>
+          <div class="view-head">
+            <h1 class="pixel-title">Статистика</h1>
+            <button class="btn" type="button" id="report-btn">📸 Итоги месяца</button>
+          </div>
           <div class="tiles" id="stats-tiles"></div>
           <div class="card">
             <h2 class="card-title">Активность за 7 дней</h2>
@@ -198,9 +260,22 @@
               <button class="btn btn-small" type="button" id="pet-add">＋ Добавить</button>
             </div>
             <ul class="list" id="pets-list"></ul>
+            <button class="btn btn-danger btn-block lost-btn" type="button" id="lost-btn">🆘 Питомец потерялся</button>
+            <p class="muted small">Листовка для подъездов и соцсетей, а ещё QR-бирка на ошейник: нашедший отсканирует её и сразу увидит, кому звонить.</p>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <h2 class="card-title">Семья</h2>
+              <button class="btn btn-small" type="button" id="member-add">＋ Человек</button>
+            </div>
+            <ul class="list" id="family-list"></ul>
           </div>
           <div class="card settings">
             <h2 class="card-title">Оформление и звук</h2>
+            <label class="setting">
+              <span>Детский режим<br /><small class="muted">Крупные кнопки, без расходов и опасных настроек</small></span>
+              <input type="checkbox" id="set-kid" class="switch" />
+            </label>
             <label class="setting">
               <span>Тема</span>
               <select id="set-theme">
@@ -218,6 +293,10 @@
               <input type="checkbox" id="set-notify" class="switch" />
             </label>
             <label class="setting">
+              <span>Погода и советы для прогулок<br /><small class="muted">Нужен доступ к местоположению. Координаты округляются до ~1 км и уходят только в сервис погоды Open-Meteo.</small></span>
+              <input type="checkbox" id="set-weather" class="switch" />
+            </label>
+            <label class="setting">
               <span>Валюта</span>
               <select id="set-currency">
                 <option value="RUB">₽ Рубль</option>
@@ -231,9 +310,10 @@
           </div>
           <div class="card settings">
             <h2 class="card-title">Данные</h2>
-            <p class="muted small">Все записи хранятся только в этом браузере. Делай резервную копию, чтобы перенести дневник на другое устройство.</p>
+            <p class="muted small">Все записи хранятся только в этом браузере. Делай резервную копию, чтобы перенести дневник на другое устройство. <span id="backup-info"></span></p>
             <div class="button-row">
               <button class="btn" type="button" id="export-btn">💾 Скачать копию</button>
+              <button class="btn btn-ghost" type="button" id="memo-btn">🤝 Памятка для няни</button>
               <button class="btn btn-ghost" type="button" id="import-btn">📂 Восстановить</button>
               <button class="btn btn-ghost" type="button" id="csv-btn">📊 Журнал в CSV</button>
               <button class="btn btn-ghost" type="button" id="print-btn">🖨️ Паспорт питомца</button>
@@ -274,7 +354,14 @@
     <script src="js/sprites.js"></script>
     <script src="js/sound.js"></script>
     <script src="js/charts.js"></script>
+    <script src="js/weather.js"></script>
+    <script src="js/vendor/qrcode.min.js"></script>
     <script src="js/ui.js"></script>
+    <script src="js/photos.js"></script>
+    <script src="js/content.js"></script>
+    <script src="js/family.js"></script>
+    <script src="js/report.js"></script>
+    <script src="js/lost.js"></script>
     <script src="js/views/home.js"></script>
     <script src="js/views/journal.js"></script>
     <script src="js/views/health.js"></script>

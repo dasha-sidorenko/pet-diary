@@ -1,0 +1,78 @@
+{
+  "$description": "Pet Diary design tokens (W3C DTCG). Import into Figma via Tokens Studio, or create Figma Variables from them. Source of truth: css/style.css + css/glass.css.",
+  "color": {
+    "light": {
+      "background": { "$type": "color", "$value": "#f3f4f7" },
+      "surface": { "$type": "color", "$value": "#ffffff" },
+      "glass": { "$type": "color", "$value": "#ffffff94", "$description": "White 58% + background blur 22" },
+      "glass-strong": { "$type": "color", "$value": "#ffffffc7", "$description": "White 78% — tab bar, sheets" },
+      "fill-secondary": { "$type": "color", "$value": "#76768c14" },
+      "ink": { "$type": "color", "$value": "#1c1c22" },
+      "muted": { "$type": "color", "$value": "#6d6f7b" },
+      "separator": { "$type": "color", "$value": "#14162814" },
+      "accent": { "$type": "color", "$value": "#5b6cff" },
+      "accent-2": { "$type": "color", "$value": "#9466ff" },
+      "accent-soft": { "$type": "color", "$value": "#5b6cff1f" },
+      "good": { "$type": "color", "$value": "#2fbf71" },
+      "warning": { "$type": "color", "$value": "#f5a623" },
+      "danger": { "$type": "color", "$value": "#ff5d62" },
+      "gold": { "$type": "color", "$value": "#ffc53d" }
+    },
+    "dark": {
+      "background": { "$type": "color", "$value": "#0d0e13" },
+      "surface": { "$type": "color", "$value": "#1b1c24" },
+      "glass": { "$type": "color", "$value": "#1e202c80" },
+      "glass-strong": { "$type": "color", "$value": "#1e202cc7" },
+      "fill-secondary": { "$type": "color", "$value": "#ffffff0f" },
+      "ink": { "$type": "color", "$value": "#f4f4f7" },
+      "muted": { "$type": "color", "$value": "#9b9caa" },
+      "separator": { "$type": "color", "$value": "#ffffff17" },
+      "accent": { "$type": "color", "$value": "#7d8bff" },
+      "accent-soft": { "$type": "color", "$value": "#7d8bff29" }
+    },
+    "ai": {
+      "1": { "$type": "color", "$value": "#6a7bff" },
+      "2": { "$type": "color", "$value": "#a06bff" },
+      "3": { "$type": "color", "$value": "#ff6fc0" },
+      "4": { "$type": "color", "$value": "#ffae6b" },
+      "button-start": { "$type": "color", "$value": "#4f5df0" },
+      "button-end": { "$type": "color", "$value": "#7a4dff" }
+    }
+  },
+  "gradient": {
+    "ai": { "$type": "gradient", "$value": [{ "color": "#6a7bff", "position": 0 }, { "color": "#a06bff", "position": 0.38 }, { "color": "#ff6fc0", "position": 0.72 }, { "color": "#ffae6b", "position": 1 }] },
+    "button": { "$type": "gradient", "$value": [{ "color": "#4f5df0", "position": 0 }, { "color": "#7a4dff", "position": 1 }] }
+  },
+  "font": {
+    "family": { "$type": "fontFamily", "$value": "Inter" },
+    "large-title": { "$type": "typography", "$value": { "fontFamily": "Inter", "fontSize": "34px", "fontWeight": 800, "lineHeight": "41px", "letterSpacing": "-0.6px" } },
+    "title-1": { "$type": "typography", "$value": { "fontFamily": "Inter", "fontSize": "28px", "fontWeight": 800, "lineHeight": "34px", "letterSpacing": "-0.6px" } },
+    "title-2": { "$type": "typography", "$value": { "fontFamily": "Inter", "fontSize": "22px", "fontWeight": 700, "lineHeight": "28px", "letterSpacing": "-0.4px" } },
+    "headline": { "$type": "typography", "$value": { "fontFamily": "Inter", "fontSize": "17px", "fontWeight": 600, "lineHeight": "22px", "letterSpacing": "0px" } },
+    "body": { "$type": "typography", "$value": { "fontFamily": "Inter", "fontSize": "17px", "fontWeight": 400, "lineHeight": "24px", "letterSpacing": "0px" } },
+    "callout": { "$type": "typography", "$value": { "fontFamily": "Inter", "fontSize": "16px", "fontWeight": 500, "lineHeight": "22px", "letterSpacing": "0px" } },
+    "footnote": { "$type": "typography", "$value": { "fontFamily": "Inter", "fontSize": "13px", "fontWeight": 400, "lineHeight": "18px", "letterSpacing": "0px" } },
+    "caption": { "$type": "typography", "$value": { "fontFamily": "Inter", "fontSize": "12px", "fontWeight": 500, "lineHeight": "16px", "letterSpacing": "0px" } }
+  },
+  "radius": {
+    "field": { "$type": "dimension", "$value": "14px" },
+    "card": { "$type": "dimension", "$value": "22px" },
+    "sheet": { "$type": "dimension", "$value": "28px" },
+    "pill": { "$type": "dimension", "$value": "999px" }
+  },
+  "space": {
+    "1": { "$type": "dimension", "$value": "4px" },
+    "2": { "$type": "dimension", "$value": "8px" },
+    "3": { "$type": "dimension", "$value": "12px" },
+    "4": { "$type": "dimension", "$value": "16px" },
+    "6": { "$type": "dimension", "$value": "24px" },
+    "8": { "$type": "dimension", "$value": "32px" },
+    "touch-target-ios": { "$type": "dimension", "$value": "44px", "$description": "HIG minimum hit area" },
+    "touch-target-android": { "$type": "dimension", "$value": "48px", "$description": "Material minimum touch target" }
+  },
+  "effect": {
+    "glass-blur": { "$type": "dimension", "$value": "22px", "$description": "Figma: Background blur 22" },
+    "card-shadow": { "$type": "shadow", "$value": { "color": "#14162812", "offsetX": "0px", "offsetY": "10px", "blur": "30px", "spread": "0px" } },
+    "button-glow": { "$type": "shadow", "$value": { "color": "#6254ff59", "offsetX": "0px", "offsetY": "6px", "blur": "18px", "spread": "0px" } }
+  }
+}

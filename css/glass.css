@@ -1,0 +1,911 @@
+/* ==========================================================================
+   Жидкое стекло: финальный слой оформления.
+   Подключается после style.css и заменяет пиксельные рамки старой темы
+   на минималистичные полупрозрачные поверхности. Питомец остаётся пиксельным.
+   ========================================================================== */
+
+/* ---------- Фон с мягким сиянием ---------- */
+
+body {
+  background-color: var(--bg);
+  background-image: none;
+  font-size: 16px;
+  letter-spacing: -0.005em;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: -20vmax;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(38vmax 38vmax at 18% 12%, var(--glow-1), transparent 70%),
+    radial-gradient(34vmax 34vmax at 85% 30%, var(--glow-2), transparent 70%),
+    radial-gradient(40vmax 40vmax at 50% 95%, var(--glow-3), transparent 70%);
+  filter: blur(30px);
+  animation: aurora 28s ease-in-out infinite alternate;
+}
+
+@keyframes aurora {
+  to {
+    transform: translate3d(3vmax, -2vmax, 0) rotate(8deg) scale(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before {
+    animation: none;
+  }
+}
+
+canvas {
+  image-rendering: pixelated;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Стеклянные поверхности ---------- */
+
+.card,
+.tabbar,
+.modal,
+.reminder,
+.toast {
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--sh-lg);
+}
+
+/* Блик по верхней кромке — эффект «жидкого стекла» */
+.card::after,
+.tabbar::after,
+.reminder::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0) 40%);
+  mix-blend-mode: soft-light;
+}
+
+.reminder {
+  position: relative;
+}
+
+.card {
+  padding: 18px;
+  margin-bottom: 16px;
+  border-radius: var(--radius);
+}
+
+.card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* ---------- Типографика ---------- */
+
+.pixel-title,
+.pet-name {
+  font-family: var(--font-ui);
+  font-weight: 800;
+  font-size: clamp(1.6rem, 6vw, 2rem);
+  letter-spacing: -0.03em;
+  text-shadow: none;
+  line-height: 1.15;
+}
+
+.pet-name {
+  font-size: clamp(1.5rem, 5.5vw, 1.8rem);
+}
+
+.tile-value {
+  font-family: var(--font-ui);
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.logo {
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+/* ---------- Шапка ---------- */
+
+.topbar {
+  padding: 12px 0;
+  background: linear-gradient(var(--bg) 40%, transparent);
+}
+
+.icon-btn {
+  width: 40px;
+  min-width: 40px;
+  padding: 0;
+  border-radius: 999px;
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--sh-press);
+  transition: transform 0.15s ease;
+}
+
+.icon-btn.small {
+  width: 32px;
+  min-width: 32px;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.icon-btn:active {
+  transform: scale(0.94);
+  box-shadow: none;
+}
+
+.pet-chip {
+  border-radius: 999px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--sh-press);
+}
+
+.pet-chip.is-active {
+  background: var(--accent);
+  border-color: transparent;
+}
+
+/* ---------- Кнопки ---------- */
+
+.btn {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-weight: 650;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 85%, #fff), var(--accent));
+  box-shadow: var(--sh-btn);
+  transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.btn:hover {
+  filter: brightness(1.05);
+  box-shadow: var(--sh-btn), 0 0 0 4px var(--accent-soft);
+}
+
+.btn:active {
+  transform: scale(0.97);
+  box-shadow: var(--sh-btn-active);
+}
+
+.btn-small {
+  padding: 6px 12px;
+}
+
+.btn-ghost {
+  background: var(--card-2);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+
+.btn-ghost:hover {
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+.btn-danger {
+  background: linear-gradient(180deg, #d4363e, #b9262e);
+  box-shadow: 0 6px 18px rgba(212, 54, 62, 0.3);
+}
+
+.link-btn {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* ---------- Сцена с питомцем ---------- */
+
+.scene-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.scene {
+  border-bottom: none;
+}
+
+.mood {
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--card-2);
+}
+
+.speech {
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+/* ---------- Шкалы ---------- */
+
+.bar {
+  border: none;
+  border-radius: 999px;
+  padding: 3px;
+  gap: 3px;
+  background: var(--track);
+}
+
+.bar i {
+  height: 8px;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.bar-good i.on,
+.bar-mid i.on,
+.bar-low i.on {
+  box-shadow: none;
+}
+
+.bar-good i.on {
+  background: var(--good);
+}
+
+.bar-mid i.on {
+  background: var(--mid);
+}
+
+.bar-low i.on {
+  background: var(--low);
+}
+
+.plan-pips i {
+  width: 18px;
+  height: 8px;
+  border: none;
+  border-radius: 999px;
+  background: var(--track);
+}
+
+.stars-track,
+.stock-track,
+.cat-bar-track {
+  border: none;
+  border-radius: 999px;
+  background: var(--track);
+}
+
+.cat-bar-fill {
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent-2), var(--accent));
+}
+
+/* ---------- Быстрые действия и плитки ---------- */
+
+.action-btn,
+.choice,
+.member-pick,
+.chore,
+.who-option {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card-2);
+  box-shadow: none;
+  transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.action-btn:hover,
+.choice:hover,
+.member-pick:hover,
+.who-option:hover {
+  background: var(--accent-soft);
+  transform: translateY(-2px);
+}
+
+.action-btn:active {
+  transform: scale(0.96);
+  box-shadow: none;
+}
+
+input[type="radio"]:checked + .choice,
+.member-pick.is-active {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: transparent;
+  box-shadow: 0 6px 18px rgba(91, 108, 255, 0.3);
+  transform: none;
+}
+
+.tile,
+.stat,
+.badge-card {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card-2);
+  box-shadow: none;
+}
+
+.badge-card.is-open {
+  background: linear-gradient(160deg, rgba(255, 197, 61, 0.22), var(--card-2));
+  box-shadow: 0 0 0 1px rgba(255, 197, 61, 0.5) inset;
+}
+
+/* ---------- Списки и лента ---------- */
+
+.entry,
+.list-item,
+.card .entry,
+.card .list-item {
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--card-2);
+  box-shadow: none;
+}
+
+#journal-list .entry {
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+}
+
+.entry-icon,
+.list-icon {
+  border: none;
+  border-radius: 12px;
+  background: var(--card-solid);
+  box-shadow: var(--sh-sm);
+}
+
+.list-item.is-overdue {
+  box-shadow: inset 3px 0 0 var(--low);
+}
+
+.list-item.is-soon {
+  box-shadow: inset 3px 0 0 var(--mid);
+}
+
+.list-item.is-active {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+/* ---------- Напоминания ---------- */
+
+.reminder {
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.reminder:not(.is-overdue):not(.is-birthday):not(.is-backup):not(.is-stock) {
+  background: color-mix(in srgb, var(--mid) 18%, var(--glass));
+}
+
+.reminder.is-overdue {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--low) 18%, var(--glass));
+  border-color: color-mix(in srgb, var(--low) 40%, transparent);
+  animation: none;
+}
+
+.reminder.is-birthday {
+  background: linear-gradient(110deg, rgba(255, 197, 61, 0.3), rgba(255, 143, 163, 0.3), rgba(139, 123, 255, 0.3));
+}
+
+.reminder.is-stock,
+.reminder.is-backup {
+  background: var(--glass);
+}
+
+/* ---------- Поля ввода ---------- */
+
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background-color: var(--card-2);
+  box-shadow: none;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+.switch {
+  border: none;
+  border-radius: 999px;
+  background: var(--track);
+}
+
+.switch::after {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.switch:checked {
+  background: var(--good);
+}
+
+.chip {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card-2);
+}
+
+.chip.is-active {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: transparent;
+}
+
+/* ---------- Навигация ---------- */
+
+.tabbar {
+  border-radius: 26px;
+  overflow: hidden;
+  padding: 6px;
+  gap: 4px;
+  background: var(--glass-strong);
+}
+
+.tabbar a + a {
+  border-left: none;
+}
+
+.tabbar a {
+  border-radius: 20px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.tabbar a.is-active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.tab-icon {
+  transition: transform 0.2s ease;
+}
+
+.badge {
+  border: none;
+  border-radius: 999px;
+}
+
+/* ---------- Окна и тосты ---------- */
+
+.modal {
+  border-radius: 28px;
+  background: var(--glass-strong);
+  box-shadow: var(--sh-xl);
+}
+
+.modal::backdrop {
+  background: rgba(10, 12, 20, 0.35);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.modal[open] {
+  animation: glass-pop 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+@keyframes glass-pop {
+  from {
+    transform: scale(0.96) translateY(8px);
+    opacity: 0;
+  }
+}
+
+.toast {
+  border-radius: 999px;
+  background: var(--glass-strong);
+  color: var(--ink);
+  box-shadow: var(--sh-toast);
+  animation: toast-glass 0.25s ease;
+}
+
+.toast.is-leaving {
+  transition: all 0.2s ease;
+}
+
+@keyframes toast-glass {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.toast-gold {
+  background: linear-gradient(110deg, rgba(255, 197, 61, 0.92), rgba(255, 170, 90, 0.92));
+  color: #1c1c22;
+}
+
+.toast-error {
+  background: rgba(255, 77, 85, 0.92);
+  color: #fff;
+}
+
+.form-error {
+  border: none;
+  border-radius: var(--radius-sm);
+}
+
+/* ---------- Мелочи ---------- */
+
+.heat,
+.heatmap-legend i {
+  border: none;
+  border-radius: 4px;
+}
+
+.swatch {
+  border-radius: 999px;
+  border: 2px solid var(--glass-border);
+  box-shadow: var(--sh-sm);
+}
+
+.weather,
+.field-section {
+  border-top: 1px solid var(--line);
+}
+
+.memo,
+.report-preview,
+.photo-thumb {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--sh-md);
+}
+
+.memo {
+  background: var(--card-2);
+}
+
+.skip-link {
+  border-radius: 999px;
+}
+
+/* ==========================================================================
+   ИИ-эстетика: переливающийся градиент, светящиеся контуры, искры ✦.
+   Только оформление — сам дневник по-прежнему работает без сети.
+   ========================================================================== */
+
+:root {
+  --ai-1: #6a7bff;
+  --ai-2: #a06bff;
+  --ai-3: #ff6fc0;
+  --ai-4: #ffae6b;
+  --ai-gradient: linear-gradient(120deg, var(--ai-1), var(--ai-2) 38%, var(--ai-3) 72%, var(--ai-4));
+  /* Для кнопок с белым текстом — только холодная часть спектра, чтобы хватало контраста */
+  --ai-button: linear-gradient(120deg, #4f5df0, #7a4dff);
+}
+
+@property --ai-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes ai-spin {
+  to {
+    --ai-angle: 360deg;
+  }
+}
+
+/* Переливающийся текст: логотип и заголовки разделов */
+.logo span,
+.view-head .pixel-title,
+.view > .pixel-title {
+  background: var(--ai-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Основные кнопки: холодный градиент и блик, пробегающий при наведении */
+.btn:not(.btn-ghost):not(.btn-danger) {
+  position: relative;
+  overflow: hidden;
+  background: var(--ai-button);
+  box-shadow: 0 6px 20px rgba(98, 84, 255, 0.35), 0 1px 0 rgba(255, 255, 255, 0.3) inset;
+}
+
+.btn:not(.btn-ghost):not(.btn-danger)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.35) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+
+.btn:not(.btn-ghost):not(.btn-danger):hover::after {
+  transform: translateX(120%);
+}
+
+/* Светящийся контур — общий приём для «умных» блоков */
+.composer::before,
+.fact-card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(from var(--ai-angle), var(--ai-1), var(--ai-2), var(--ai-3), var(--ai-4), var(--ai-1));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Поле заметки в стиле чата: пилюля, светящаяся рамка, кнопка «↑» */
+.composer {
+  position: relative;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 5px 5px 16px;
+  border-radius: 999px;
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  transition: box-shadow 0.3s ease;
+}
+
+.composer::before {
+  opacity: 0.45;
+  transition: opacity 0.3s ease;
+}
+
+.composer:focus-within {
+  box-shadow: 0 0 0 4px rgba(160, 107, 255, 0.12), 0 10px 30px rgba(160, 107, 255, 0.25);
+}
+
+.composer:focus-within::before {
+  opacity: 1;
+  animation: ai-spin 3.5s linear infinite;
+}
+
+.composer input:not([type="checkbox"]):not([type="radio"]),
+.composer input:not([type="checkbox"]):not([type="radio"]):focus {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 8px 0;
+}
+
+.composer-btn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: background 0.2s ease;
+}
+
+.composer-btn:hover {
+  background: var(--card-2);
+}
+
+.composer-send {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+/* Карточка факта дня — как «инсайт» в ИИ-приложениях */
+.fact-card {
+  background: linear-gradient(135deg, rgba(106, 123, 255, 0.1), rgba(255, 111, 192, 0.08)), var(--glass);
+}
+
+.fact-card::before {
+  opacity: 0.6;
+}
+
+.ai-spark {
+  display: inline-block;
+  background: var(--ai-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: ai-twinkle 2.6s ease-in-out infinite;
+}
+
+@keyframes ai-twinkle {
+  50% {
+    opacity: 0.55;
+    transform: scale(0.85) rotate(20deg);
+  }
+}
+
+/* Мягкий ореол вокруг сцены с питомцем */
+.scene-card {
+  box-shadow: var(--sh-lg), 0 24px 60px -24px rgba(122, 108, 255, 0.5);
+}
+
+/* Активная вкладка — переливающаяся подложка */
+.tabbar a.is-active {
+  background: linear-gradient(120deg, rgba(106, 123, 255, 0.18), rgba(255, 111, 192, 0.14));
+}
+
+.chip.is-active {
+  background: var(--ai-button);
+  color: #fff;
+}
+
+/* Уважение к настройке «уменьшить движение» */
+@media (prefers-reduced-motion: reduce) {
+  .composer:focus-within::before,
+  .ai-spark {
+    animation: none;
+  }
+
+  .btn::after {
+    display: none;
+  }
+}
+
+/* ==========================================================================
+   Гайдлайны Apple HIG и Material 3
+   - зона нажатия не меньше 44×44 pt (HIG) / 48×48 dp (Material);
+   - контраст текста не ниже 4.5:1, цветной текст — отдельными тёмными тонами;
+   - контент не залезает под «чёлку», статус-бар и закруглённые углы (safe area).
+   ========================================================================== */
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Safe area: шапка под статус-баром, поля по бокам в альбомной ориентации */
+.topbar {
+  padding-top: calc(12px + env(safe-area-inset-top));
+}
+
+.app {
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
+}
+
+/* ---------- Цветной текст ---------- */
+
+.mood-hint,
+.stat.is-up .stat-value {
+  color: var(--low-text);
+}
+
+.plan-row.is-done .plan-head strong,
+.plan-check,
+.stat.is-down .stat-value {
+  color: var(--good-text);
+}
+
+.next-date {
+  color: var(--mid-text);
+}
+
+.badge {
+  background: var(--badge);
+}
+
+/* ---------- Зоны нажатия ---------- */
+
+/* Заметные контролы — честные 44 pt */
+.icon-btn,
+.composer-btn,
+.composer-send {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+}
+
+/* Старое мобильное правило ужимало иконки шапки до 36 — возвращаем 44 */
+.topbar-tools .icon-btn {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  padding: 0;
+}
+
+.btn,
+.btn-small {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.logo {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Ряд чипов прокручивается по горизонтали и обрезал бы расширенную зону нажатия */
+.chips {
+  padding-top: 6px;
+  padding-bottom: 12px;
+}
+
+.composer input:not([type="checkbox"]):not([type="radio"]) {
+  min-height: 44px;
+}
+
+/* Мелкие контролы внутри списков и текста сохраняют вид,
+   но получают невидимое расширение области нажатия до 44 pt */
+.icon-btn.small,
+.chip,
+.link-btn,
+.more-line a,
+.about a {
+  position: relative;
+}
+
+.icon-btn.small {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+}
+
+.icon-btn.small::before,
+.chip::before,
+.link-btn::before,
+.more-line a::before,
+.about a::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+}
+
+.chip::before {
+  inset: -6px -4px;
+}
+
+.link-btn::before,
+.more-line a::before,
+.about a::before {
+  inset: -14px -6px;
+}
+
+/* Переключатели: нажимается вся строка настройки (label), саму строку делаем не ниже 44 */
+.settings .setting {
+  min-height: 52px;
+}
+
+/* Печать — без стекла и сияния */
+@media print {
+  body::before {
+    display: none;
+  }
+}

@@ -16,7 +16,21 @@
     return S.ACTIONS.concat([S.NOTE_ACTION]);
   }
 
+  // Если выбрано новое фото — сохраняем его и отдаём id, иначе оставляем прежнее
+  function withPhoto(file, current) {
+    if (!file) return Promise.resolve(current || null);
+    return PD.photos.save(file).catch(function (err) {
+      PD.ui.toast(err.message || "Фото не сохранилось", { icon: "⚠️", kind: "error" });
+      return current || null;
+    });
+  }
+
   function openEntryForm(entry) {
+    // Симптомы редактируются в своей форме
+    if (entry && entry.type === "symptom") {
+      PD.views.health.openSymptomForm(entry);
+      return;
+    }
     const isNew = !entry;
     PD.ui.openForm({
       title: isNew ? "Новая запись" : "Изменить запись",
@@ -32,16 +46,20 @@
         },
         { name: "time", label: "Когда", type: "datetime-local", required: true, value: U.toLocalInput(entry ? entry.time : Date.now()) },
         { name: "note", label: "Заметка", type: "textarea", value: entry ? entry.note : "", placeholder: "Необязательно", maxlength: 300 },
+        { name: "photo", label: "Фото", type: "photo", value: entry ? entry.photoId : null },
       ],
       validate: function (v) {
         if (new Date(v.time).getTime() > Date.now() + 60 * 1000) return "Запись не может быть из будущего";
-        if (v.type === "note" && !v.note) return "Для заметки нужен текст";
+        if (v.type === "note" && !v.note && !v.photo && !(entry && entry.photoId)) return "Для заметки нужен текст или фото";
         return null;
       },
       onSubmit: function (v) {
         const data = { type: v.type, time: new Date(v.time).getTime(), note: v.note };
-        if (isNew) S.addItem("entries", data);
-        else S.updateItem("entries", entry.id, data);
+        withPhoto(v.photo, entry && entry.photoId).then(function (photoId) {
+          if (photoId) data.photoId = photoId;
+          if (isNew) S.addItem("entries", data);
+          else S.updateItem("entries", entry.id, data);
+        });
       },
       onDelete: isNew ? null : () => PD.ui.removeWithUndo("entries", entry.id),
     });
@@ -103,15 +121,21 @@
   }
 
   function repeatEntry(entry) {
-    S.addEntry(entry.type, entry.note);
+    const extra = {};
+    if (entry.symptom) extra.symptom = entry.symptom;
+    if (entry.medId) extra.medId = entry.medId;
+    S.addEntry(entry.type, entry.note, Date.now(), extra);
     PD.sound("action");
-    PD.ui.toast("Повторено: " + S.actionInfo(entry.type).label, { icon: "↻" });
+    PD.ui.toast("Повторено: " + S.entryInfo(entry).label, { icon: "↻" });
   }
 
   // Одна строка записи — используется и на главной, и в журнале
   function entryItem(entry) {
-    const info = S.actionInfo(entry.type);
-    const body = el("div", { class: "entry-body", title: "Нажми, чтобы изменить заметку" }, el("span", { class: "entry-title", text: info.label }));
+    const info = S.entryInfo(entry);
+    const who = entry.by ? PD.family.member(entry.by) : null;
+    const title = el("span", { class: "entry-title", text: info.label });
+    if (who) title.append(el("span", { class: "entry-by", text: " · " + PD.family.label(who) }));
+    const body = el("div", { class: "entry-body", title: "Нажми, чтобы изменить заметку" }, title);
     if (entry.note) body.append(el("span", { class: "entry-note", text: entry.note }));
     else body.append(el("span", { class: "entry-note entry-note-empty", text: "+ заметка" }));
     body.addEventListener("click", () => editInline(entry, body));
@@ -120,6 +144,7 @@
       { class: "entry entry-" + entry.type },
       el("span", { class: "entry-icon", text: info.icon, "aria-hidden": "true" }),
       body,
+      entry.photoId ? PD.photos.thumb(entry.photoId, "entry-photo") : null,
       el("time", { class: "entry-time", datetime: new Date(entry.time).toISOString(), text: U.formatTime(entry.time) }),
       el(
         "div",
@@ -148,7 +173,7 @@
     const box = U.$("#journal-filters");
     box.innerHTML = "";
     const used = new Set(S.forPet(S.state.entries).map((e) => e.type));
-    const chips = [{ type: "all", label: "Все", icon: "✨" }].concat(allTypes().filter((a) => used.has(a.type)));
+    const chips = [{ type: "all", label: "Все", icon: "✨" }].concat(allTypes().concat([S.SYMPTOM_ACTION]).filter((a) => used.has(a.type)));
     chips.forEach(function (c) {
       box.append(
         el("button", {
@@ -173,7 +198,7 @@
     if (filter !== "all") items = items.filter((e) => e.type === filter);
     if (query) {
       items = items.filter(function (e) {
-        const info = S.actionInfo(e.type);
+        const info = S.entryInfo(e);
         return (info.label + " " + (e.note || "")).toLowerCase().includes(query);
       });
     }

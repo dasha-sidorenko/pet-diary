@@ -125,6 +125,22 @@
     tear: { rows: ["t", "t"], colors: { t: "#7ec8ff" } },
   };
 
+  // Картинки снов: что питомцу снится после дня (рисуются в облачке над спящим)
+  const DREAMS = {
+    food: { rows: ["oo...oo", "ooooooo", "oo...oo"], colors: { o: "#d9a066" } },
+    ball: { rows: [".rrr.", "rrwrr", "rrrrr", ".rrr."], colors: { r: "#ff6b6b", w: "#ffffff" } },
+    walk: { rows: ["..g..", ".ggg.", "ggggg", "..b.."], colors: { g: "#4caf50", b: "#8b5a2b" } },
+    vet: { rows: [".r.", "rrr", ".r."], colors: { r: "#e5484d" } },
+    heart: PARTICLES.heart,
+  };
+
+  const SKY_OVERCAST = {
+    day: ["#8696ab", "#9fadbf", "#b8c3d0"],
+    dawn: ["#6f7894", "#a39aa8", "#c2b8b4"],
+    dusk: ["#4a4766", "#7a6a80", "#a58f94"],
+    night: ["#0c1430", "#131f44", "#1b2a56"],
+  };
+
   const SUN = ["..yyyy..", ".yyyyyy.", "yyyyyyyy", "yyyyyyyy", "yyyyyyyy", "yyyyyyyy", ".yyyyyy.", "..yyyy.."];
   const MOON = ["..mmm.", ".mmm..", "mmm...", "mmm...", "mmm...", ".mmm..", "..mmm."];
   const CLOUD = ["...www....", ".wwwwwww..", "wwwwwwwwww", ".wwwwwwww."];
@@ -173,7 +189,7 @@
     }
   }
 
-  // Статичный портрет питомца — для аватарок и иконок
+  // Статичный портрет питомца — для аватарок, отчёта и листовки
   function drawAvatar(canvas, species, color) {
     const rows = SPRITES[species] || SPRITES.other;
     canvas.width = 18;
@@ -208,9 +224,9 @@
 
   function PetScene(canvas) {
     this.canvas = canvas;
-    this.ctx = canvas.getContext("2d");
     this.W = 72;
     this.H = 44;
+    this.ctx = canvas.getContext("2d");
     canvas.width = this.W;
     canvas.height = this.H;
     this.groundY = this.H - 9;
@@ -230,6 +246,8 @@
     this.nextAmbient = 0;
     this.reducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     this.empty = false;
+    this.weather = null; // clear | cloud | fog | rain | snow | storm
+    this.dream = null;
     this.frame = this.frame.bind(this);
     requestAnimationFrame(this.frame);
   }
@@ -244,6 +262,15 @@
   PetScene.prototype.setMood = function (mood, sleeping) {
     this.mood = mood;
     this.sleeping = !!sleeping;
+  };
+
+  PetScene.prototype.setWeather = function (kind) {
+    this.weather = kind || null;
+  };
+
+  // Что снится: food | ball | walk | vet | heart
+  PetScene.prototype.setDream = function (kind) {
+    this.dream = DREAMS[kind] ? kind : null;
   };
 
   PetScene.prototype.spawn = function (name, count, spread) {
@@ -291,7 +318,8 @@
     const ctx = this.ctx;
     const date = new Date();
     const phase = phaseOfDay(date);
-    const sky = SKIES[phase];
+    const overcast = this.weather && this.weather !== "clear";
+    const sky = overcast ? SKY_OVERCAST[phase] : SKIES[phase];
     const band = Math.ceil(this.groundY / 3);
     sky.forEach(function (color, i) {
       ctx.fillStyle = color;
@@ -306,7 +334,20 @@
       }
     }
 
-    if (phase === "night") {
+    if (overcast) {
+      // Сплошная облачность: солнце и звёзды спрятаны, тучи плывут ниже и гуще
+      const cloudColor = phase === "night" ? "#2a3558" : this.weather === "storm" ? "#5d6577" : "#d5dbe3";
+      const span = this.W + 14;
+      [0, 23, 47].forEach(function (offset, i) {
+        const cx = Math.floor(((now / (1400 + i * 500) + offset) % span) - 12);
+        drawMap(ctx, CLOUD, { w: cloudColor }, cx, 2 + i * 5);
+      });
+      // Вспышка молнии раз в несколько секунд
+      if (this.weather === "storm" && !this.reducedMotion && now % 5200 < 90) {
+        ctx.fillStyle = "rgba(255,255,255,0.55)";
+        ctx.fillRect(0, 0, this.W, this.groundY);
+      }
+    } else if (phase === "night") {
       for (let i = 0; i < 22; i++) {
         const sx = Math.floor(seeded(i) * this.W);
         const sy = Math.floor(seeded(i + 100) * (this.groundY - 6));
@@ -425,6 +466,69 @@
       drawMap(ctx, p.p.rows, p.p.colors, px, py);
       ctx.globalAlpha = 1;
     });
+
+    this.drawPrecipitation(now);
+    if (this.sleeping && this.dream) this.drawDream(now);
+  };
+
+  // Облачко сна над спящим питомцем: появляется на 4 секунды из каждых 7
+  PetScene.prototype.drawDream = function (now) {
+    if (!this.reducedMotion && now % 7000 > 4000) return;
+    const ctx = this.ctx;
+    const icon = DREAMS[this.dream];
+    const bw = 13;
+    const bh = 9;
+    const right = this.x + 22 + bw <= this.W;
+    const bx = right ? this.x + 18 : Math.max(0, this.x - bw - 2);
+    const by = Math.max(1, this.petY() - 12);
+    const ink = "#2b1d2e";
+    // Маленькие «пузырьки мысли» от головы к облачку
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(right ? this.x + 15 : this.x + 1, this.petY() - 2, 1, 1);
+    ctx.fillRect(right ? this.x + 16 : this.x - 1, this.petY() - 4, 2, 2);
+    // Облачко со скруглёнными углами
+    ctx.fillStyle = ink;
+    ctx.fillRect(bx + 1, by, bw - 2, bh);
+    ctx.fillRect(bx, by + 1, bw, bh - 2);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(bx + 1, by + 1, bw - 2, bh - 2);
+    const iw = icon.rows[0].length;
+    const ih = icon.rows.length;
+    drawMap(ctx, icon.rows, icon.colors, bx + Math.floor((bw - iw) / 2), by + Math.floor((bh - ih) / 2));
+  };
+
+  // Дождь и снег поверх сцены. Капли детерминированы по номеру — без мусора в памяти
+  PetScene.prototype.drawPrecipitation = function (now) {
+    const kind = this.weather;
+    const ctx = this.ctx;
+    if (kind === "fog") {
+      ctx.fillStyle = "rgba(235,240,245,0.35)";
+      ctx.fillRect(0, 0, this.W, this.H);
+      return;
+    }
+    if (kind !== "rain" && kind !== "snow" && kind !== "storm") return;
+    const t = this.reducedMotion ? 0 : now;
+    const snow = kind === "snow";
+    const count = snow ? 26 : 34;
+    const fall = this.groundY + 2;
+    for (let i = 0; i < count; i++) {
+      const speed = snow ? 0.006 + seeded(i + 40) * 0.004 : 0.05 + seeded(i + 40) * 0.02;
+      const y = Math.floor((seeded(i + 900) * fall + t * speed) % fall);
+      const drift = snow ? Math.round(Math.sin(t / 700 + i) * 1.5) : Math.floor(y / 4);
+      const x = Math.floor((seeded(i + 600) * this.W - drift + this.W) % this.W);
+      if (snow) {
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(x, y, 1, 1);
+      } else {
+        ctx.fillStyle = "#a9d6ff";
+        ctx.fillRect(x, y, 1, 2);
+      }
+    }
+    // Снег ложится на траву
+    if (snow) {
+      ctx.fillStyle = "rgba(255,255,255,0.18)";
+      ctx.fillRect(0, this.groundY + 1, this.W, 2);
+    }
   };
 
   PetScene.prototype.frame = function (now) {

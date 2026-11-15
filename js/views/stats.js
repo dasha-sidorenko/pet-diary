@@ -152,5 +152,9 @@
     renderAchievements();
   }
 
-  PD.views.stats = { init: function () {}, render };
+  function init() {
+    U.$("#report-btn").addEventListener("click", () => PD.report.open());
+  }
+
+  PD.views.stats = { init, render };
 })(window.PD);

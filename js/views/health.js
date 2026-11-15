@@ -66,6 +66,9 @@
         hint: "Напомним заранее. Оставь пустым, если повтор не нужен.",
       },
       { name: "clinic", label: "Клиника / врач", maxlength: 80, value: item ? item.clinic || "" : "", placeholder: "Необязательно" },
+      // Курс лекарств: появится в «Плане на сегодня» с отметками доз
+      { name: "timesPerDay", label: "Раз в день", type: "number", inputmode: "numeric", value: item && item.timesPerDay ? item.timesPerDay : "", placeholder: "Например, 2", course: true },
+      { name: "courseDays", label: "Дней курса", type: "number", inputmode: "numeric", value: item && item.courseDays ? item.courseDays : "", placeholder: "Например, 7", course: true, hint: "Дозы появятся в плане на сегодня" },
     ];
     if (isNew) fields.push({ name: "cost", label: "Стоимость", type: "number", min: 0, step: "0.01", inputmode: "decimal", hint: "Если указать — сразу попадёт в расходы" });
     fields.push({ name: "note", label: "Заметка", type: "textarea", value: item ? item.note || "" : "", placeholder: "Препарат, дозировка, рекомендации врача" });
@@ -77,10 +80,18 @@
       validate: function (v) {
         if (v.nextDate && v.nextDate < v.date) return "Следующая дата не может быть раньше текущей";
         if (v.cost !== "" && v.cost !== null && (isNaN(v.cost) || v.cost < 0)) return "Проверь стоимость";
+        if (v.kind === "med") {
+          if (v.timesPerDay !== "" && (!Number.isInteger(v.timesPerDay) || v.timesPerDay < 1 || v.timesPerDay > 12)) return "Раз в день — от 1 до 12";
+          if (v.courseDays !== "" && (!Number.isInteger(v.courseDays) || v.courseDays < 1 || v.courseDays > 365)) return "Дней курса — от 1 до 365";
+          if ((v.timesPerDay === "") !== (v.courseDays === "")) return "Для курса укажи и «Раз в день», и «Дней курса»";
+        }
         return null;
       },
       onSubmit: function (v) {
         const data = { kind: v.kind, title: v.title, date: v.date, nextDate: v.nextDate, clinic: v.clinic, note: v.note };
+        const course = v.kind === "med" && v.timesPerDay !== "";
+        data.timesPerDay = course ? v.timesPerDay : 0;
+        data.courseDays = course ? v.courseDays : 0;
         if (isNew) {
           S.addItem("health", data);
           if (v.cost) {
@@ -95,9 +106,21 @@
       onDelete: isNew ? null : () => PD.ui.removeWithUndo("health", item.id, "Событие удалено"),
     });
 
+    // Поля курса видны только для лекарств
+    const form = U.$("#modal-form");
+    const toggleCourse = function (kindValue) {
+      ["timesPerDay", "courseDays"].forEach(function (name) {
+        const field = form.elements[name].closest(".field");
+        field.hidden = kindValue !== "med";
+      });
+    };
+    toggleCourse(kindId);
+    form.addEventListener("change", function (event) {
+      if (event.target.name === "kind") toggleCourse(event.target.value);
+    });
+
     // При смене типа подставляем подходящее название и интервал повтора
     if (isNew) {
-      const form = U.$("#modal-form");
       form.addEventListener("change", function (event) {
         if (event.target.name !== "kind") return;
         const k = S.healthKind(event.target.value);
@@ -134,15 +157,151 @@
     });
   }
 
+  // ---------- Симптомы ----------
+  function openSymptomForm(entry) {
+    const isNew = !entry;
+    PD.ui.openForm({
+      title: isNew ? "Что-то не так?" : "Симптом",
+      noAutofocus: true,
+      fields: [
+        { name: "symptom", label: "Что заметили", type: "choice", compact: true, value: entry ? entry.symptom : "vomit", options: S.SYMPTOMS.map((s) => ({ value: s.id, label: s.label, icon: s.icon })) },
+        { name: "time", label: "Когда", type: "datetime-local", required: true, value: U.toLocalInput(entry ? entry.time : Date.now()) },
+        { name: "note", label: "Подробности", type: "textarea", maxlength: 300, value: entry ? entry.note : "", placeholder: "Например: после еды, с примесью травы, лапу поджимает задняя левая" },
+        { name: "photo", label: "Фото — врачу пригодится", type: "photo", value: entry ? entry.photoId : null },
+      ],
+      validate: function (v) {
+        if (new Date(v.time).getTime() > Date.now() + 60 * 1000) return "Запись не может быть из будущего";
+        return null;
+      },
+      onSubmit: function (v) {
+        const data = { type: "symptom", symptom: v.symptom, time: new Date(v.time).getTime(), note: v.note };
+        const save = v.photo ? PD.photos.save(v.photo).catch(() => (entry ? entry.photoId : null)) : Promise.resolve(entry ? entry.photoId : null);
+        save.then(function (photoId) {
+          if (photoId) data.photoId = photoId;
+          if (isNew) S.addItem("entries", data);
+          else S.updateItem("entries", entry.id, data);
+          if (isNew && PD.views.home) PD.views.home.react(S.SYMPTOM_ACTION);
+          const alert = S.symptomAlerts().find((a) => a.symptom.id === v.symptom);
+          if (alert) PD.ui.toast(alert.symptom.label + " уже " + alert.count + " " + U.plural(alert.count, "раз", "раза", "раз") + " за сутки — стоит позвонить ветеринару", { icon: "⚠️", kind: "error", timeout: 7000 });
+        });
+      },
+      onDelete: isNew ? null : () => PD.ui.removeWithUndo("entries", entry.id),
+    });
+  }
+
+  function renderSymptoms(pet) {
+    const list = U.$("#symptom-list");
+    list.innerHTML = "";
+    const since = Date.now() - 14 * U.DAY;
+    const items = S.entriesSorted(pet.id).filter((e) => e.type === "symptom" && e.time >= since);
+    if (!items.length) {
+      list.append(el("li", { class: "empty-inline muted", text: "За две недели жалоб нет 💚 Если что-то насторожит — отметь здесь: врачу будет проще понять картину." }));
+      return;
+    }
+    items.slice(0, 6).forEach(function (e) {
+      const s = S.symptomInfo(e.symptom);
+      list.append(
+        el(
+          "li",
+          { class: "list-item" },
+          el("span", { class: "list-icon", text: s.icon }),
+          el("div", { class: "list-body" }, el("strong", { text: s.label }), el("span", { class: "muted small", text: U.formatDayTitle(e.time) + ", " + U.formatTime(e.time) + (e.note ? " · " + e.note : "") })),
+          e.photoId ? PD.photos.thumb(e.photoId, "entry-photo") : null,
+          el("button", { type: "button", class: "icon-btn small", "aria-label": "Изменить", text: "✎", onclick: () => openSymptomForm(e) })
+        )
+      );
+    });
+  }
+
+  // Отчёт для ветеринара: всё, что спросят на приёме, — коротко и по датам
+  function vetReport(pet) {
+    const lines = [];
+    const species = S.SPECIES.find((s) => s.id === pet.species).label;
+    lines.push(pet.name + " — " + [species.toLowerCase(), pet.breed, U.formatAge(pet.birthDate), pet.sex === "m" ? "мальчик" : pet.sex === "f" ? "девочка" : ""].filter(Boolean).join(", "));
+    if (pet.chip) lines.push("Чип: " + pet.chip);
+    const weights = S.forPet(S.state.weights, pet.id).sort((a, b) => (a.date > b.date ? 1 : -1));
+    if (weights.length) {
+      const last = weights[weights.length - 1];
+      const monthAgo = weights.filter((w) => w.date <= U.addDaysISO(-25)).pop();
+      let w = "Вес: " + String(last.kg).replace(".", ",") + " кг (" + U.formatDate(last.date) + ")";
+      if (monthAgo && monthAgo !== last) w += ", месяц назад " + String(monthAgo.kg).replace(".", ",") + " кг";
+      lines.push(w);
+    }
+    if (pet.food) lines.push("Корм: " + pet.food);
+    if (pet.allergies) lines.push("Аллергии: " + pet.allergies);
+    if (pet.conditions) lines.push("Хронические болезни: " + pet.conditions);
+
+    const since = Date.now() - 14 * U.DAY;
+    const symptoms = S.entriesSorted(pet.id)
+      .filter((e) => e.type === "symptom" && e.time >= since)
+      .reverse();
+    lines.push("", "СИМПТОМЫ ЗА 14 ДНЕЙ");
+    if (!symptoms.length) lines.push("не отмечались");
+    let day = null;
+    symptoms.forEach(function (e) {
+      const d = U.formatDate(e.time);
+      if (d !== day) {
+        day = d;
+        lines.push(d + ":");
+      }
+      lines.push("  " + U.formatTime(e.time) + " — " + S.symptomInfo(e.symptom).label + (e.note ? " (" + e.note + ")" : ""));
+    });
+
+    // Аппетит и активность за неделю: врачу важно, ест ли питомец и гуляет ли как обычно
+    lines.push("", "ЕДА И АКТИВНОСТЬ ЗА 7 ДНЕЙ");
+    for (let i = 6; i >= 0; i--) {
+      const key = U.addDaysISO(-i);
+      const dayEntries = S.forPet(S.state.entries, pet.id).filter((e) => U.toISODate(e.time) === key);
+      const n = (t) => dayEntries.filter((e) => e.type === t).length;
+      const parts = ["кормлений " + n("feed")];
+      if (pet.species === "dog" || n("walk")) parts.push("прогулок " + n("walk"));
+      if (n("toilet")) parts.push("туалет " + n("toilet"));
+      lines.push(U.formatDate(key) + ": " + parts.join(", "));
+    }
+
+    const meds = S.forPet(S.state.health, pet.id).filter((h) => h.kind === "med" && U.daysBetween(U.parseISODate(h.date), new Date()) <= 30);
+    if (meds.length) {
+      lines.push("", "ЛЕКАРСТВА ЗА МЕСЯЦ");
+      meds.forEach((m) => lines.push("• " + m.title + " с " + U.formatDate(m.date) + (m.timesPerDay ? ", " + m.timesPerDay + " р/день, " + m.courseDays + " дн." : "") + (m.note ? " — " + m.note : "")));
+    }
+    const lastVaccine = S.forPet(S.state.health, pet.id)
+      .filter((h) => h.kind === "vaccine")
+      .sort((a, b) => (a.date > b.date ? 1 : -1))
+      .pop();
+    if (lastVaccine) lines.push("", "Последняя прививка: " + lastVaccine.title + ", " + U.formatDate(lastVaccine.date, true));
+    lines.push("", "Отчёт из Pet Diary · " + U.formatDate(U.today(), true));
+    return lines.join("\n");
+  }
+
+  function openVetReport() {
+    const pet = S.activePet();
+    if (!pet) return;
+    const text = vetReport(pet);
+    const body = PD.ui.openPanel("Отчёт для врача");
+    body.append(
+      el("p", { class: "muted small", text: "Покажи на приёме или отправь в клинику заранее — так врач быстрее поймёт, что происходит." }),
+      el("pre", { class: "memo", text: text }),
+      el(
+        "div",
+        { class: "modal-actions" },
+        el("span", { class: "spacer" }),
+        el("button", { type: "button", class: "btn btn-ghost", text: "📋 Копировать", onclick: () => PD.ui.copyText(text) }),
+        navigator.share ? el("button", { type: "button", class: "btn", text: "📤 Отправить", onclick: () => navigator.share({ title: "Отчёт для врача: " + pet.name, text: text }).catch(() => {}) }) : null
+      )
+    );
+  }
+
   function init() {
     U.$("#health-add").addEventListener("click", () => openHealthForm(null));
     U.$("#weight-add").addEventListener("click", () => openWeightForm(null));
+    U.$("#symptom-add").addEventListener("click", () => openSymptomForm(null));
+    U.$("#vet-report-btn").addEventListener("click", openVetReport);
   }
 
   function renderUpcoming(pet) {
     const box = U.$("#health-upcoming");
     box.innerHTML = "";
-    const list = S.reminders(pet.id).filter((r) => !r.birthday);
+    const list = S.reminders(pet.id).filter((r) => r.item);
     const later = S.forPet(S.state.health)
       .filter((h) => h.nextDate && !h.closed && !list.some((r) => r.item.id === h.id))
       .sort((a, b) => (a.nextDate > b.nextDate ? 1 : -1))
@@ -273,10 +432,11 @@
   function render() {
     const pet = S.activePet();
     if (!pet) return;
+    renderSymptoms(pet);
     renderUpcoming(pet);
     renderWeight(pet);
     renderRecords(pet);
   }
 
-  PD.views.health = { init, render };
+  PD.views.health = { init, render, openSymptomForm };
 })(window.PD);

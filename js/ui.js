@@ -55,8 +55,17 @@
 
   // ---------- Модальное окно с формой ----------
   const modal = U.$("#modal");
-  const modalForm = U.$("#modal-form");
+  let modalForm = U.$("#modal-form");
   let modalState = null;
+
+  // Каждое окно получает свежую форму: иначе обработчики input/change от прошлых окон
+  // копились бы на одном элементе и срабатывали в чужих формах.
+  function freshModalForm() {
+    const form = el("form", { method: "dialog", class: "modal-body", id: "modal-form", novalidate: true });
+    modalForm.replaceWith(form);
+    modalForm = form;
+    return form;
+  }
 
   function showModal() {
     if (typeof modal.showModal === "function") modal.showModal();
@@ -80,8 +89,24 @@
   });
 
   function renderField(field) {
+    // Заголовок раздела внутри формы
+    if (field.type === "section") {
+      return el("div", { class: "field-section" }, el("h3", { text: field.label }), field.hint ? el("p", { class: "field-hint", text: field.hint }) : null);
+    }
     const id = "f-" + field.name;
     const wrap = el("div", { class: "field" + (field.wide ? " field-wide" : "") });
+    // Фото: выбор файла (на телефоне — камера или галерея) и миниатюра текущего
+    if (field.type === "photo") {
+      wrap.classList.add("field-wide");
+      const input = el("input", { id: id, name: field.name, type: "file", accept: "image/*", class: "photo-input" });
+      const label = el("label", { for: id, class: "btn btn-ghost btn-small photo-pick", text: field.value ? "📷 Заменить фото" : "📷 Добавить фото" });
+      const row = el("div", { class: "photo-field" }, field.value ? PD.photos.thumb(field.value) : null, label, input);
+      input.addEventListener("change", function () {
+        if (input.files[0]) label.textContent = "📷 " + input.files[0].name.slice(0, 24);
+      });
+      wrap.append(el("div", { class: "field-label", text: field.label }), row);
+      return wrap;
+    }
     const label = el("label", { for: id, class: "field-label", text: field.label + (field.required ? " *" : "") });
     let input;
 
@@ -143,7 +168,12 @@
     const data = new FormData(form);
     const values = {};
     fields.forEach(function (f) {
+      if (f.type === "section") return;
       let v = data.get(f.name);
+      if (f.type === "photo") {
+        values[f.name] = v && v.size ? v : null;
+        return;
+      }
       if (typeof v === "string") v = v.trim();
       if (f.type === "number") v = v === "" || v === null ? null : Number(String(v).replace(",", "."));
       values[f.name] = v === null ? "" : v;
@@ -215,19 +245,36 @@
       el("h2", { class: "modal-title", text: opts.title }),
       el("button", { type: "button", class: "icon-btn", "aria-label": "Закрыть", text: "✕", onclick: closeModal })
     );
-    buildForm(modalForm, Object.assign({}, opts, { inModal: true, prepend: head }));
+    buildForm(freshModalForm(), Object.assign({}, opts, { inModal: true, prepend: head }));
     modalState = {};
     showModal();
     const first = modalForm.querySelector("input:not([type=radio]):not([type=hidden]), textarea, select");
     if (first && !opts.noAutofocus) setTimeout(() => first.focus(), 30);
   }
 
+  // Окно с произвольным содержимым (памятка, отчёт): возвращает контейнер, куда класть разметку
+  function openPanel(title) {
+    const form = freshModalForm();
+    form.onsubmit = (event) => event.preventDefault();
+    const body = el("div", { class: "panel-body" });
+    form.append(
+      el(
+        "div",
+        { class: "modal-head" },
+        el("h2", { class: "modal-title", text: title }),
+        el("button", { type: "button", class: "icon-btn", "aria-label": "Закрыть", text: "✕", onclick: closeModal })
+      ),
+      body
+    );
+    modalState = {};
+    showModal();
+    return body;
+  }
+
   function confirmDialog(message, opts) {
     opts = opts || {};
     return new Promise(function (resolve) {
-      modalForm.innerHTML = "";
-      modalForm.onsubmit = null;
-      modalForm.append(
+      freshModalForm().append(
         el("h2", { class: "modal-title", text: opts.title || "Точно?" }),
         el("p", { class: "confirm-text", text: message }),
         el(
@@ -319,6 +366,10 @@
     if (r.birthday) {
       return r.days === 0 ? "🎂 Сегодня день рождения у " + r.pet.name + "!" : "🎂 День рождения " + r.pet.name + " " + U.relativeDays(U.addDaysISO(r.days));
     }
+    if (r.stock) {
+      if (r.days === 0) return "🛍️ " + r.pet.name + ": корм закончился — пора купить новый мешок";
+      return "🛍️ " + r.pet.name + ": корма осталось на " + r.days + " " + U.plural(r.days, "день", "дня", "дней") + " — пора докупить";
+    }
     const kind = S.healthKind(r.item.kind);
     return kind.icon + " " + r.pet.name + ": " + r.item.title + " — " + U.relativeDays(r.item.nextDate);
   }
@@ -351,6 +402,7 @@
     toast,
     removeWithUndo,
     openForm,
+    openPanel,
     buildForm,
     closeModal,
     confirmDialog,

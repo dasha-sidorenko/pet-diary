@@ -175,7 +175,13 @@
       },
       onSubmit: function (v) {
         const data = { type: "symptom", symptom: v.symptom, time: new Date(v.time).getTime(), note: v.note };
-        const save = v.photo ? PD.photos.save(v.photo).catch(() => (entry ? entry.photoId : null)) : Promise.resolve(entry ? entry.photoId : null);
+        const keep = entry ? entry.photoId : null;
+        const save = v.photo
+          ? PD.photos.save(v.photo).catch(function (err) {
+              PD.ui.toast((err && err.message) || "Фото не сохранилось — симптом записан без него", { icon: "⚠️", kind: "error" });
+              return keep;
+            })
+          : Promise.resolve(keep);
         save.then(function (photoId) {
           if (photoId) data.photoId = photoId;
           if (isNew) S.addItem("entries", data);

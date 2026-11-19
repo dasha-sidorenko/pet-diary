@@ -128,7 +128,12 @@
         : function () {
             S.state.chores = S.state.chores.filter((c) => c.memberId !== m.id);
             S.state.members = S.state.members.filter((x) => x.id !== m.id);
-            if (S.state.settings.memberId === m.id) S.state.settings.memberId = S.state.members.length ? S.state.members[0].id : null;
+            // Переключаемся на взрослого, а не на первого в списке: иначе удаление себя
+            // молча включило бы детский режим и спрятало у родителя расходы и настройки
+            if (S.state.settings.memberId === m.id) {
+              const adult = S.state.members.find((x) => !x.kid);
+              S.state.settings.memberId = adult ? adult.id : null;
+            }
             S.commit();
             PD.ui.toast(m.name + " больше не в списке семьи", { icon: "👋" });
           },

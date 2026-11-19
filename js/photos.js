@@ -109,11 +109,24 @@
     return img;
   }
 
+  // Просмотр — в отдельном окне поверх всего. Общую модалку не трогаем:
+  // иначе открытая форма с несохранёнными правками подменилась бы фотографией.
+  let lightbox = null;
+
   function view(id) {
     url(id).then(function (u) {
       if (!u) return;
-      const body = PD.ui.openPanel("Фото");
-      body.append(el("img", { class: "photo-full", src: u, alt: "Фото" }));
+      if (!lightbox) {
+        lightbox = el("dialog", { class: "lightbox", "aria-label": "Фото" });
+        lightbox.addEventListener("click", () => lightbox.close());
+        document.body.append(lightbox);
+      }
+      lightbox.replaceChildren(
+        el("img", { class: "photo-full", src: u, alt: "Фото" }),
+        el("button", { type: "button", class: "icon-btn lightbox-close", "aria-label": "Закрыть", text: "✕" })
+      );
+      if (typeof lightbox.showModal === "function") lightbox.showModal();
+      else lightbox.setAttribute("open", "");
     });
   }
 
@@ -139,22 +152,46 @@
   }
 
   function importAll(map) {
-    const ids = Object.keys(map || {});
+    // Берём только встроенные картинки: адрес вида https://… из чужого файла
+    // заставил бы браузер сходить на сторонний сервер
+    const ids = Object.keys(map || {}).filter((id) => typeof map[id] === "string" && map[id].startsWith("data:image/"));
     return Promise.all(
       ids.map((id) =>
-        fetch(map[id])
-          .then((res) => res.blob())
+        Promise.resolve()
+          .then(() => dataURLToBlob(map[id]))
           .then((blob) => run("readwrite", (store) => store.put(blob, id)))
           .catch(() => null)
       )
     );
   }
 
-  // Удаляем фото, на которые больше не ссылается ни одна запись
-  function cleanup(usedIds) {
-    const used = new Set(usedIds);
+  // data:image/...;base64,XXXX → Blob без участия сети
+  function dataURLToBlob(dataUrl) {
+    const comma = dataUrl.indexOf(",");
+    const meta = dataUrl.slice(5, comma);
+    const type = meta.split(";")[0] || "image/jpeg";
+    const bin = atob(dataUrl.slice(comma + 1));
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new Blob([bytes], { type: type });
+  }
+
+  // Время создания фото зашито в его id: "ph" + Date.now() в base36 (8 символов) + случайный хвост
+  function createdAt(id) {
+    const t = parseInt(String(id).slice(2, 10), 36);
+    return Number.isFinite(t) ? t : 0;
+  }
+
+  // Удаляем фото, на которые больше не ссылается ни одна запись.
+  // getUsed вызывается уже после чтения ключей — так видны записи, добавленные только что,
+  // а фото моложе 10 минут не трогаем вовсе: запись к ним может ещё сохраняться.
+  function cleanup(getUsed) {
+    const grace = Date.now() - 10 * 60 * 1000;
     return run("readonly", (store) => store.getAllKeys())
-      .then((keys) => Promise.all((keys || []).filter((k) => !used.has(k)).map(remove)))
+      .then(function (keys) {
+        const used = new Set(getUsed());
+        return Promise.all((keys || []).filter((k) => !used.has(k) && createdAt(k) < grace).map(remove));
+      })
       .catch(() => {});
   }
 

@@ -457,7 +457,8 @@
     const used = U.daysBetween(U.parseISODate(s.openedAt), new Date());
     const total = Math.floor((s.bagKg * 1000) / s.dailyG);
     const daysLeft = Math.max(0, total - used);
-    return { daysLeft: daysLeft, total: total, endDate: U.addDaysISO(daysLeft), share: Math.max(0, Math.min(1, daysLeft / total)) };
+    const share = total > 0 ? Math.max(0, Math.min(1, daysLeft / total)) : 0;
+    return { daysLeft: daysLeft, total: total, endDate: U.addDaysISO(daysLeft), share: share };
   }
 
   // --- Тревожные симптомы: несколько эпизодов за сутки ---

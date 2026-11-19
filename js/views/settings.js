@@ -146,14 +146,20 @@
 
   // Копия вместе с фото: без них перенос на новый телефон был бы неполным
   function exportBackup() {
-    const ids = usedPhotoIds();
+    const ids = Array.from(new Set(usedPhotoIds()));
     const photos = ids.length ? PD.photos.exportAll(ids).catch(() => ({})) : Promise.resolve({});
     photos.then(function (map) {
       U.download("pet-diary-backup-" + U.today() + ".json", S.exportData(map), "application/json");
       S.bump("exports");
-      S.updateSettings({ lastExportAt: Date.now(), backupSnoozeUntil: null });
       PD.ui.checkAchievements();
       const n = Object.keys(map).length;
+      const missing = ids.length - n;
+      if (missing > 0) {
+        // Не все фото удалось прочитать — честно предупреждаем и не считаем копию полной
+        PD.ui.toast("Копия сохранена, но без " + missing + " фото: браузер не отдал их из хранилища", { icon: "⚠️", kind: "error", timeout: 7000 });
+        return;
+      }
+      S.updateSettings({ lastExportAt: Date.now(), backupSnoozeUntil: null });
       PD.ui.toast("Резервная копия сохранена" + (n ? " (с фото: " + n + ")" : ""), { icon: "💾" });
     });
   }

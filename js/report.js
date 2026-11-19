@@ -170,10 +170,14 @@
     const next = el("button", { type: "button", class: "icon-btn", "aria-label": "Следующий месяц", text: "▶" });
     const filename = () => "pet-diary-" + pet.name + "-" + cursor.getFullYear() + "-" + String(cursor.getMonth() + 1).padStart(2, "0") + ".png";
 
+    // ready — промис текущей отрисовки: «Сохранить» и «Поделиться» ждут его,
+    // иначе на медленной сети ушла бы пустая картинка до загрузки шрифтов
+    let ready = Promise.resolve();
+
     function redraw() {
       title.textContent = MONTHS[cursor.getMonth()] + " " + cursor.getFullYear();
       next.disabled = cursor.getFullYear() === now.getFullYear() && cursor.getMonth() === now.getMonth();
-      fontsReady().then(function () {
+      ready = fontsReady().then(function () {
         draw(canvas, pet, cursor.getFullYear(), cursor.getMonth());
         img.src = canvas.toDataURL("image/png");
       });
@@ -187,14 +191,14 @@
     next.addEventListener("click", () => shift(1));
 
     function save() {
-      toBlob(canvas).then(function (blob) {
+      ready.then(() => toBlob(canvas)).then(function (blob) {
         U.download(filename(), blob, "image/png");
         PD.ui.toast("Картинка сохранена", { icon: "🖼️" });
       });
     }
 
     function share() {
-      toBlob(canvas).then(function (blob) {
+      ready.then(() => toBlob(canvas)).then(function (blob) {
         const file = new File([blob], filename(), { type: "image/png" });
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           navigator.share({ files: [file], title: "Итоги месяца: " + pet.name }).catch(() => {});

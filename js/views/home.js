@@ -140,6 +140,7 @@
       validate: function (v) {
         if (!(v.bagKg > 0 && v.bagKg <= 50)) return "Вес мешка — от 0,1 до 50 кг";
         if (!(v.dailyG >= 1 && v.dailyG <= 3000)) return "Суточная норма — от 1 до 3000 г";
+        if (v.bagKg * 1000 < v.dailyG) return "В мешке меньше корма, чем нужно на день — проверь вес и норму";
         return null;
       },
       onSubmit: function (v) {
@@ -408,9 +409,15 @@
     const box = U.$("#memories");
     box.innerHTML = "";
     const now = new Date();
+    // Тот же день N месяцев назад; если такого дня нет (31 марта → февраль), берём последний день месяца
+    const back = function (months) {
+      const first = new Date(now.getFullYear(), now.getMonth() - months, 1);
+      const last = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
+      return new Date(first.getFullYear(), first.getMonth(), Math.min(now.getDate(), last));
+    };
     const options = [
-      { title: "Год назад в этот день", date: new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()) },
-      { title: "Месяц назад", date: new Date(now.getFullYear(), now.getMonth() - 1, now.getDate()), photosOnly: true },
+      { title: "Год назад в этот день", date: back(12) },
+      { title: "Месяц назад", date: back(1), photosOnly: true },
     ];
     let found = null;
     for (const opt of options) {

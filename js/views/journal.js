@@ -57,6 +57,8 @@
         const data = { type: v.type, time: new Date(v.time).getTime(), note: v.note };
         withPhoto(v.photo, entry && entry.photoId).then(function (photoId) {
           if (photoId) data.photoId = photoId;
+          // Заметка держалась только на фото, а оно не сохранилось — пустую запись не создаём
+          if (data.type === "note" && !data.note && !data.photoId) return;
           if (isNew) S.addItem("entries", data);
           else S.updateItem("entries", entry.id, data);
         });

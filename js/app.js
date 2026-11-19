@@ -240,8 +240,7 @@
 
     // Подчищаем фото, на которые больше нет ссылок (удалённые записи)
     setTimeout(function () {
-      const used = S.state.entries.map((e) => e.photoId).concat(S.state.pets.map((p) => p.photoId)).filter(Boolean);
-      PD.photos.cleanup(used);
+      PD.photos.cleanup(() => S.state.entries.map((e) => e.photoId).concat(S.state.pets.map((p) => p.photoId)).filter(Boolean));
     }, 5000);
 
     // Офлайн-режим и установка на телефон (работает только по http/https)

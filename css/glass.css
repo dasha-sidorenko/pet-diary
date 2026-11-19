@@ -909,3 +909,33 @@ html {
     display: none;
   }
 }
+
+/* Просмотр фото поверх любых окон (отдельный dialog, форма под ним не теряется) */
+.lightbox {
+  width: min(92vw, 900px);
+  max-height: 90vh;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  overflow: visible;
+  cursor: zoom-out;
+}
+
+.lightbox::backdrop {
+  background: rgba(10, 12, 20, 0.7);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.lightbox .photo-full {
+  max-height: 86vh;
+  border-radius: var(--radius);
+  box-shadow: var(--sh-xl);
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
